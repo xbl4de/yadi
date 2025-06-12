@@ -27,43 +27,6 @@ func SetBeanProvider[T Bean](builder func(ctx Context) (T, error), options ...fu
 	return 42 // doesn't work with any other value...just joke(?)
 }
 
-func SetBeanProviderFunc[T Bean](function interface{}) int {
-	return SetBeanProvider(func(ctx Context) (T, error) {
-		box, err := providerFromFuncE[T](function)
-		return box.Value, err
-	})
-}
-
-func providerFromFuncE[T Bean](function interface{}) (*ValueBox[T], error) {
-	val := reflect.ValueOf(function)
-	if val.Kind() != reflect.Func {
-		return EmptyBox[T](), errors.Errorf("Expected function, but provided %s", val.Kind().String())
-	}
-	t := reflect.TypeOf(function)
-	if t.NumOut() > 2 {
-		return EmptyBox[T](), errors.Errorf("Provider function must return at most two values, but got %d", t.NumIn())
-	}
-	if t.NumOut() == 2 && !t.Out(1).Implements(reflect.TypeFor[error]()) {
-		return EmptyBox[T](), errors.Errorf("Provider function must return an error as second value, but got %s", t.Out(1).Kind().String())
-	}
-	args := make([]reflect.Value, t.NumIn())
-	for i := 0; i < t.NumIn(); i++ {
-		argT := t.In(i)
-		bean, err := globalCtx.Get(argT)
-		if err != nil {
-			return EmptyBox[T](), err
-		}
-		args[i] = reflect.ValueOf(bean)
-	}
-	outs := val.Call(args)
-	box := &ValueBox[T]{outs[0].Interface().(T)}
-	if len(outs) == 1 {
-		return box, nil
-	} else {
-		return box, outs[1].Interface().(error)
-	}
-}
-
 func WithExistingBean[T, E Bean]() int {
 	_ = SetBeanProvider(func(ctx Context) (Bean, error) {
 		return nil, nil
@@ -110,6 +73,14 @@ func GetBean[T Bean]() (*ValueBox[T], error) {
 		return nil, errors.WithMessagef(err, "Failed to obtain bean from context")
 	}
 	return &ValueBox[T]{casted}, nil
+}
+
+func RequireBean[T Bean]() T {
+	bean, err := GetBean[T]()
+	if err != nil {
+		panic(err)
+	}
+	return bean.Value
 }
 
 func GetBeanOrDefault[T Bean](defaultValue T) *ValueBox[T] {

@@ -1,6 +1,12 @@
 package yadi
 
-import "reflect"
+import (
+	"errors"
+	"reflect"
+)
+
+var ErrNoBeanProvider = errors.New("no bean provider found")
+var ErrNoValueFound = errors.New("no value found")
 
 type Context interface {
 	Init()

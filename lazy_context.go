@@ -51,7 +51,7 @@ func (ctx *LazyContext) Get(p reflect.Type) (Bean, error) {
 	}
 	beanContainer, err := ctx.initBean(p)
 	if err != nil {
-		return nil, err
+		return nil, errors.WithMessagef(err, "failed to init bean %s", p.String())
 	}
 	return beanContainer.Bean, nil
 }
@@ -60,7 +60,7 @@ func (ctx *LazyContext) initBean(p reflect.Type) (*BeanContainer, error) {
 	var provider *BeanProvider
 	var ok bool
 	if provider, ok = ctx.providers[p]; !ok {
-		return nil, errors.Errorf("no provider for type %v", p)
+		return nil, ErrNoBeanProvider
 	}
 
 	var beanContainer *BeanContainer
@@ -93,7 +93,7 @@ func (ctx *LazyContext) GetGenericValue(path string) (interface{}, error) {
 	if val, ok := ctx.values[path]; ok {
 		return val, nil
 	}
-	return nil, errors.Errorf("no value for path %v", path)
+	return nil, ErrNoValueFound
 }
 
 func (ctx *LazyContext) SetGenericValue(path string, value interface{}) {
