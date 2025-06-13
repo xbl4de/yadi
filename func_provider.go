@@ -73,7 +73,7 @@ func providerFromFuncE[T Bean](function interface{}, cfg *FuncProviderConfig) (*
 	}
 
 	outs := funcValue.Call(args)
-	box := buildValueBox[T](outs)
+	box := buildValueBox[T](outs[0])
 
 	if len(outs) == 1 {
 		return box, nil
@@ -89,15 +89,16 @@ func castToErr(errVal reflect.Value) error {
 	return errVal.Elem().Interface().(error)
 }
 
-func buildValueBox[T interface{}](outs []reflect.Value) *ValueBox[T] {
-	var val T
-	if outs[0].Kind() == reflect.Interface {
-		val = outs[0].Elem().Interface().(T)
+func buildValueBox[T interface{}](reflectVal reflect.Value) *ValueBox[T] {
+	return &ValueBox[T]{convertToBean(reflectVal).(T)}
+}
+
+func convertToBean(reflectVal reflect.Value) Bean {
+	if reflectVal.Kind() == reflect.Interface {
+		return reflectVal.Elem().Interface()
 	} else {
-		val = outs[0].Interface().(T)
+		return reflectVal.Interface()
 	}
-	box := &ValueBox[T]{val}
-	return box
 }
 
 func buildArgs(funcType reflect.Type, cfg *FuncProviderConfig) ([]reflect.Value, error) {
@@ -147,56 +148,10 @@ func isTypesNotCompatible(declaredType reflect.Type, returnType reflect.Type) bo
 }
 
 func findArgValue(argType reflect.Type, opt *ParameterConfig) (interface{}, error) {
-	if argType.Kind() == reflect.Ptr {
-		return findPointerType(argType, opt)
+	if argType.Kind() == reflect.Ptr ||
+		argType.Kind() == reflect.Interface ||
+		argType.Kind() == reflect.Struct {
+		return getBeanOrDefault(argType, opt.DefaultValue)
 	}
-	if argType.Kind() == reflect.Interface || argType.Kind() == reflect.Struct {
-		return getBeanFromContext(argType)
-	} else {
-		return findGenricValue(opt)
-	}
-}
-
-func findPointerType(argType reflect.Type, opt *ParameterConfig) (interface{}, error) {
-	err := validateTypeIsBean(argType.Elem())
-	if err != nil {
-		return nil, err
-	}
-	bean, err := getBeanFromContext(argType)
-	if err != nil {
-		if errors.Is(err, ErrNoBeanProvider) {
-			return opt.DefaultValue, nil
-		}
-		return nil, err
-	}
-	return bean, nil
-}
-
-func validateTypeIsBean(argType reflect.Type) error {
-	if argType.Kind() == reflect.Struct || argType.Kind() == reflect.Interface {
-		return nil
-	}
-	return errors.Errorf("Expected struct or interface, but got %s", argType.Kind().String())
-}
-
-func getBeanFromContext(argType reflect.Type) (interface{}, error) {
-	val, err := globalCtx.Get(argType)
-	if err != nil {
-		return nil, err
-	}
-	return val, err
-}
-
-func findGenricValue(opt *ParameterConfig) (interface{}, error) {
-	if opt.ValuePath == "" {
-		return reflect.ValueOf(nil), errors.Errorf("Expected non-empty value path")
-	}
-	value, err := globalCtx.GetGenericValue(opt.ValuePath)
-	if err != nil {
-		if errors.Is(err, ErrNoValueFound) {
-			return opt.DefaultValue, nil
-		}
-		return nil, err
-	}
-	return value, nil
+	return getGenericValueOrDefault(opt.ValuePath, opt.DefaultValue)
 }

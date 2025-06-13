@@ -1,6 +1,7 @@
 package yadi
 
 import (
+	"fmt"
 	"github.com/pkg/errors"
 	"log"
 	"reflect"
@@ -78,7 +79,7 @@ func GetBean[T Bean]() (*ValueBox[T], error) {
 func RequireBean[T Bean]() T {
 	bean, err := GetBean[T]()
 	if err != nil {
-		panic(err)
+		panic(fmt.Sprintf("%+v", err))
 	}
 	return bean.Value
 }
