@@ -61,7 +61,7 @@ func ParseTag(tag string) (*Tag, error) {
 	for _, part := range parts {
 		err = applyPart(part, newTag)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("%w: %s", ErrParseTag, err)
 		}
 	}
 	return newTag, nil

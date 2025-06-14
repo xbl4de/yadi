@@ -1,7 +1,6 @@
 package yadi
 
 import (
-	"fmt"
 	"github.com/pkg/errors"
 	"log"
 	"reflect"
@@ -80,7 +79,8 @@ func GetBean[T Bean]() (*ValueBox[T], error) {
 func RequireBean[T Bean]() T {
 	bean, err := GetBean[T]()
 	if err != nil {
-		panic(fmt.Sprintf("%+v", err))
+		_log.Printf("%+v", err)
+		panic(err)
 	}
 	return bean.Value
 }
@@ -150,5 +150,23 @@ func NewLazyBean[T Bean]() LazyBean[T] {
 }
 
 func UseLazyContext() {
-	globalCtx = NewLazyContext(deferredUpdates)
+	applyContext(NewLazyContext(deferredUpdates))
+}
+
+func applyContext(ctx Context) {
+	if globalCtx != nil {
+		panic("context already used")
+	}
+	globalCtx = ctx
+}
+
+func resetYadi() {
+	deferredUpdates = deferredUpdates[:0]
+	if globalCtx != nil {
+		err := globalCtx.Close()
+		if err != nil {
+			panic(err)
+		}
+	}
+	globalCtx = nil
 }

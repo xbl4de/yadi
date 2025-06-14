@@ -2,6 +2,7 @@ package yadi
 
 import (
 	"github.com/pkg/errors"
+	"io"
 	"reflect"
 )
 
@@ -31,6 +32,18 @@ func (ctx *LazyContext) Init() {
 }
 
 func (ctx *LazyContext) Close() error {
+	for _, bean := range ctx.beans {
+		if !bean.HoldByContext {
+			continue
+		}
+		closeable, ok := bean.Bean.(io.Closer)
+		if ok {
+			err := closeable.Close()
+			if err != nil {
+				return err
+			}
+		}
+	}
 	return nil
 }
 

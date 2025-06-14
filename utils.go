@@ -29,13 +29,13 @@ func validateTypeIsBean(beanType reflect.Type) error {
 		if beanType.Elem().Kind() == reflect.Struct {
 			return nil
 		} else {
-			return errors.Errorf("Expected pointer to struct, but got %s", beanType.Kind().String())
+			return errors.Wrapf(ErrNonBeanType, "pointer to %s", beanType.String())
 		}
 	}
 	if beanType.Kind() == reflect.Struct || beanType.Kind() == reflect.Interface {
 		return nil
 	} else {
-		return errors.Errorf("Expected struct, pointer to struct or interface, but got %s", beanType.String())
+		return errors.Wrapf(ErrNonBeanType, "%s", beanType.String())
 	}
 }
 
@@ -44,8 +44,7 @@ func isTypeBean(beanType reflect.Type) bool {
 }
 
 func isTypeSupportInjection(beanType reflect.Type) bool {
-	return beanType.Kind() == reflect.Struct ||
-		beanType.Kind() == reflect.Ptr && beanType.Elem().Kind() == reflect.Struct
+	return beanType.Kind() == reflect.Ptr && beanType.Elem().Kind() == reflect.Struct
 }
 
 func isTypeDoesNotSupportInjection(beanType reflect.Type) bool {

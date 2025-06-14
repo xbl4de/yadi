@@ -25,30 +25,29 @@ func tryToBuildNewBean(beanType reflect.Type) (interface{}, error) {
 		buildType = buildType.Elem()
 	}
 
-	newValue := reflect.New(buildType).Elem()
-	err = injectToValue(newValue)
+	valPtr := reflect.New(buildType)
+	err = injectToPtr(valPtr)
 	if err != nil {
 		return nil, err
 	}
 
 	verboseLog.Printf("Built new bean for type %s", beanType.String())
-	val := newValue.Interface()
 	if isTargetTypeIsPointer {
-		return &val, nil
+		return valPtr.Interface(), nil
 	} else {
-		return val, nil
+		return valPtr.Elem().Interface(), nil
 	}
 }
 
-func Inject(value Bean) error {
-	return injectToValue(reflect.ValueOf(value))
+func Inject(valuePtr Bean) error {
+	return injectToPtr(reflect.ValueOf(valuePtr))
 }
 
-func injectToValue(reflectValue reflect.Value) error {
+func injectToPtr(reflectValue reflect.Value) error {
 	reflectType := reflectValue.Type()
 
 	if isTypeDoesNotSupportInjection(reflectType) {
-		return errors.Errorf("Inject to %s is not supported", reflectType.String())
+		return errors.Wrapf(ErrInjectNotSupported, "Inject %s to value failed", reflectType.String())
 	}
 
 	if reflectType.Kind() == reflect.Ptr {
