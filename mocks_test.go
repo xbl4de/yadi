@@ -21,7 +21,7 @@ type ServiceG struct {
 }
 
 type ServiceH struct {
-	Timeout int `yadi:"serviceH.timeout"`
+	Timeout int `yadi:"path=serviceH.timeout"`
 }
 
 type ServiceA struct {
@@ -81,8 +81,8 @@ func NewServiceA(name string, e *ServiceE) *ServiceA {
 	return &ServiceA{Name: name, ServiceE: e}
 }
 
-func NewServiceB(age int, f *ServiceF) *ServiceB {
-	return &ServiceB{Age: age, ServiceF: f}
+func NewServiceB(age int, f *ServiceF, h *ServiceH) *ServiceB {
+	return &ServiceB{Age: age, ServiceF: f, ServiceH: h}
 }
 
 func NewServiceC(location string, g *ServiceG) *ServiceC {
