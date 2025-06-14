@@ -71,7 +71,8 @@ func GetBean[T Bean]() (*ValueBox[T], error) {
 	}
 	casted, ok := bean.(T)
 	if !ok {
-		return nil, errors.WithMessagef(err, "Failed to obtain bean from context")
+		return nil, errors.Errorf("Failed to cast bean to type %s: actual type is %s",
+			p.String(), reflect.TypeOf(bean).String())
 	}
 	return &ValueBox[T]{casted}, nil
 }

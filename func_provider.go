@@ -82,25 +82,6 @@ func providerFromFuncE[T Bean](function interface{}, cfg *FuncProviderConfig) (*
 	}
 }
 
-func castToErr(errVal reflect.Value) error {
-	if errVal.IsNil() {
-		return nil
-	}
-	return errVal.Elem().Interface().(error)
-}
-
-func buildValueBox[T interface{}](reflectVal reflect.Value) *ValueBox[T] {
-	return &ValueBox[T]{convertToBean(reflectVal).(T)}
-}
-
-func convertToBean(reflectVal reflect.Value) Bean {
-	if reflectVal.Kind() == reflect.Interface {
-		return reflectVal.Elem().Interface()
-	} else {
-		return reflectVal.Interface()
-	}
-}
-
 func buildArgs(funcType reflect.Type, cfg *FuncProviderConfig) ([]reflect.Value, error) {
 	args := make([]reflect.Value, funcType.NumIn())
 	for i := 0; i < funcType.NumIn(); i++ {
@@ -133,18 +114,6 @@ func validateProviderFunc[T interface{}](funcValue reflect.Value, funcType refle
 		return errors.Errorf("Provider function must return an error as second value, but got %s", funcType.Out(1).Kind().String())
 	}
 	return nil
-}
-
-func isTypesNotCompatible(declaredType reflect.Type, returnType reflect.Type) bool {
-	if declaredType != returnType {
-		if declaredType.Kind() == reflect.Interface && returnType.Kind() == reflect.Ptr {
-			return !returnType.AssignableTo(declaredType)
-		} else {
-			return true
-		}
-	} else {
-		return false
-	}
 }
 
 func findArgValue(argType reflect.Type, opt *ParameterConfig) (interface{}, error) {

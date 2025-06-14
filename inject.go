@@ -5,15 +5,47 @@ import (
 	"reflect"
 )
 
-func InjectLazyBean[T interface{}]() LazyBean[T] {
+func InjectLazyBean[T Bean]() LazyBean[T] {
 	return func() T {
 		return RequireBean[T]()
 	}
 }
 
+func tryToBuildNewBean(beanType reflect.Type) (interface{}, error) {
+	verboseLog.Printf("Trying to build new bean for type %s", beanType.String())
+	err := validateTypeIsBean(beanType)
+	if err != nil {
+		return nil, err
+	}
+
+	isTargetTypeIsPointer := beanType.Kind() == reflect.Ptr
+
+	buildType := beanType
+	if isTargetTypeIsPointer {
+		buildType = buildType.Elem()
+	}
+
+	newValue := reflect.New(buildType).Elem()
+	err = injectToValue(newValue)
+	if err != nil {
+		return nil, err
+	}
+
+	verboseLog.Printf("Built new bean for type %s", beanType.String())
+	val := newValue.Interface()
+	if isTargetTypeIsPointer {
+		return &val, nil
+	} else {
+		return val, nil
+	}
+}
+
 func Inject(value Bean) error {
-	reflectValue := reflect.ValueOf(value)
-	reflectType := reflect.TypeOf(value)
+	return injectToValue(reflect.ValueOf(value))
+}
+
+func injectToValue(reflectValue reflect.Value) error {
+	reflectType := reflectValue.Type()
 
 	if isTypeDoesNotSupportInjection(reflectType) {
 		return errors.Errorf("Inject to %s is not supported", reflectType.String())
@@ -25,27 +57,37 @@ func Inject(value Bean) error {
 	}
 
 	fieldsCount := reflectType.NumField()
-	for fieldNum := 0; fieldNum < fieldsCount; fieldNum++ {
-		field := reflectType.Field(fieldNum)
-		yadiTag, err := ParseTag(field.Tag.Get(TagName))
+	for i := 0; i < fieldsCount; i++ {
+		field := reflectType.Field(i)
+		fieldValue := reflectValue.Field(i)
+		verboseLog.Printf("Injecting field %s.%s", reflectType.String(), field.Name)
+		err := injectToField(field, fieldValue)
 		if err != nil {
 			return err
 		}
-		if yadiTag.Ignore {
-			continue
-		}
-		fieldValue := reflectValue.Field(fieldNum)
-		fieldType := fieldValue.Type()
-		if fieldType.Kind() == reflect.Func {
-			continue
-		}
-		toInject, err := getValueToInject(fieldType, yadiTag)
-		if err != nil {
-			return err
-		}
-		fieldValue.Set(reflect.ValueOf(toInject))
 	}
 	return nil
+}
+
+func injectToField(field reflect.StructField, fieldValue reflect.Value) error {
+	yadiTag, err := ParseTag(field.Tag.Get(TagName))
+	if err != nil {
+		return err
+	}
+	fieldType := fieldValue.Type()
+	if shouldIgnoreInjection(yadiTag, fieldType) {
+		return nil
+	}
+	toInject, err := getValueToInject(fieldType, yadiTag)
+	if err != nil {
+		return err
+	}
+	fieldValue.Set(reflect.ValueOf(toInject))
+	return nil
+}
+
+func shouldIgnoreInjection(yadiTag *Tag, fieldType reflect.Type) bool {
+	return yadiTag.Ignore || fieldType.Kind() == reflect.Func
 }
 
 func getValueToInject(fieldType reflect.Type, yadiTag *Tag) (interface{}, error) {
@@ -62,15 +104,5 @@ func getValueToInject(fieldType reflect.Type, yadiTag *Tag) (interface{}, error)
 			return nil, err
 		}
 		return genericValue, nil
-	}
-}
-
-func buildLazyBean(beanType reflect.Type) func() interface{} {
-	return func() interface{} {
-		b, err := getBeanFromContext(beanType)
-		if err != nil {
-			panic(err)
-		}
-		return b
 	}
 }

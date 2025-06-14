@@ -12,7 +12,7 @@ func getBeanOrDefault(beanType reflect.Type, defaultValue Bean) (Bean, error) {
 	}
 	bean, err := getBeanFromContext(beanType)
 	if err != nil {
-		if errors.Is(err, ErrNoBeanProvider) && defaultValue != nil {
+		if errNoContextProvided(err) && defaultValue != nil {
 			return defaultValue, nil
 		}
 		return nil, err
@@ -73,4 +73,35 @@ func getGenericValueOrDefault(path string, defaultValue interface{}) (interface{
 
 func getGenericValue(path string) (interface{}, error) {
 	return getGenericValueOrDefault(path, nil)
+}
+
+func convertToBean(reflectVal reflect.Value) Bean {
+	if reflectVal.Kind() == reflect.Interface {
+		return reflectVal.Elem().Interface()
+	} else {
+		return reflectVal.Interface()
+	}
+}
+
+func castToErr(errVal reflect.Value) error {
+	if errVal.IsNil() {
+		return nil
+	}
+	return errVal.Elem().Interface().(error)
+}
+
+func buildValueBox[T interface{}](reflectVal reflect.Value) *ValueBox[T] {
+	return &ValueBox[T]{convertToBean(reflectVal).(T)}
+}
+
+func isTypesNotCompatible(declaredType reflect.Type, returnType reflect.Type) bool {
+	if declaredType != returnType {
+		if declaredType.Kind() == reflect.Interface && returnType.Kind() == reflect.Ptr {
+			return !returnType.AssignableTo(declaredType)
+		} else {
+			return true
+		}
+	} else {
+		return false
+	}
 }

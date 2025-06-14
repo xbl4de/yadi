@@ -59,11 +59,20 @@ func (ctx *LazyContext) Get(p reflect.Type) (Bean, error) {
 func (ctx *LazyContext) initBean(p reflect.Type) (*BeanContainer, error) {
 	var provider *BeanProvider
 	var ok bool
+	var beanContainer *BeanContainer
 	if provider, ok = ctx.providers[p]; !ok {
-		return nil, ErrNoBeanProvider
+		val, err := tryToBuildNewBean(p)
+		if err != nil {
+			return nil, err
+		}
+		beanContainer = &BeanContainer{
+			Bean:          val,
+			Type:          p,
+			HoldByContext: true,
+		}
+		return beanContainer, nil
 	}
 
-	var beanContainer *BeanContainer
 	if provider.useExistingBean != nil {
 		existingBean, err := ctx.Get(provider.useExistingBean)
 		if err != nil {

@@ -8,6 +8,10 @@ import (
 var ErrNoBeanProvider = errors.New("no bean provider found")
 var ErrNoValueFound = errors.New("no value found")
 
+func errNoContextProvided(err error) bool {
+	return errors.Is(err, ErrNoBeanProvider) || errors.Is(err, ErrNoValueFound)
+}
+
 type Context interface {
 	Init()
 	Close() error
