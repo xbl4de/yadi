@@ -1,5 +1,5 @@
 # yadi
-YADI — Yet Another DI([Dependency Injection](https://en.wikipedia.org/wiki/Dependency_injection)) library for go
+YADI — Yet Another DI([Dependency Injection](https://en.wikipedia.org/wiki/Dependency_injection)) library for Go
 
 ![image](https://github.com/user-attachments/assets/d3730f68-780d-49f0-b28b-fdad2797879a)
 
