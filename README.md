@@ -1,6 +1,9 @@
 # yadi
 YADI — Yet Another DI([Dependency Injection](https://en.wikipedia.org/wiki/Dependency_injection)) library for go
 
+![image](https://github.com/user-attachments/assets/d3730f68-780d-49f0-b28b-fdad2797879a)
+
+
 # Disclaimer
 
 >Library in beta stage and documentation in development, not all aspects are described. Please wait for updates.
