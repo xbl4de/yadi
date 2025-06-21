@@ -4,7 +4,7 @@ import (
 	"fmt"
 	g "github.com/onsi/gomega"
 	"github.com/pkg/errors"
-	"github.com/xbl4de/yadi/internal/types"
+	"github.com/xbl4de/yadi/types"
 	"reflect"
 	"testing"
 )

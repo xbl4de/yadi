@@ -2,8 +2,10 @@ package yadi
 
 import (
 	"github.com/xbl4de/yadi/internal/di"
-	"github.com/xbl4de/yadi/internal/types"
+	types "github.com/xbl4de/yadi/types"
 )
+
+type LazyBean[T types.Bean] = types.LazyBean[T]
 
 func SetBeanProvider[T types.Bean](builder func(ctx types.Context) (T, error), options ...func(provider *types.BeanProvider)) int {
 	return di.SetBeanProvider(builder, options...)
@@ -37,8 +39,8 @@ func SetValue[T interface{}](path string, value T) int {
 	return di.SetValue[T](path, value)
 }
 
-func NewLazyBean[T types.Bean]() types.LazyBean[T] {
-	return di.NewLazyBean[T]()
+func NewLazyBean[T types.Bean]() LazyBean[T] {
+	return LazyBean[T](di.NewLazyBean[T]())
 }
 
 func UseLazyContext() {

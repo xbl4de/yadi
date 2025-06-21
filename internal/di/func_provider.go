@@ -2,8 +2,8 @@ package di
 
 import (
 	"github.com/pkg/errors"
-	"github.com/xbl4de/yadi/internal/types"
 	"github.com/xbl4de/yadi/internal/utils"
+	"github.com/xbl4de/yadi/types"
 	"reflect"
 )
 

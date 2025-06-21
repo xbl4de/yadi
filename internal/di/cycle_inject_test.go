@@ -3,7 +3,7 @@ package di
 import (
 	"fmt"
 	g "github.com/onsi/gomega"
-	"github.com/xbl4de/yadi/internal/types"
+	"github.com/xbl4de/yadi/types"
 	"testing"
 )
 

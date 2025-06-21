@@ -3,8 +3,8 @@ package di
 import (
 	"github.com/pkg/errors"
 	log2 "github.com/xbl4de/yadi/internal/log"
-	"github.com/xbl4de/yadi/internal/types"
 	"github.com/xbl4de/yadi/internal/utils"
+	"github.com/xbl4de/yadi/types"
 	"log"
 	"reflect"
 )
