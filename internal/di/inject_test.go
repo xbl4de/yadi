@@ -1,21 +1,22 @@
-package yadi
+package di
 
 import (
 	"fmt"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
+	"github.com/xbl4de/yadi/internal/types"
 	"reflect"
 	"testing"
 )
 
-func requireType[T Bean](t *testing.T, val interface{}) T {
+func requireType[T types.Bean](t *testing.T, val interface{}) T {
 	casted, ok := val.(T)
 	require.True(t, ok)
 	return casted
 }
 
 func TestAutoBeanPtrGeneration_Success(t *testing.T) {
-	resetYadi()
+	ResetYadi()
 	ProvideDefaultValues()
 	UseLazyContext()
 	serviceABean, err := tryToBuildNewBean(reflect.TypeFor[*ServiceA]())
@@ -28,9 +29,9 @@ func TestAutoBeanPtrGeneration_Success(t *testing.T) {
 }
 
 func TestAutoBeanPtrGeneration_WhenCannotBuildInnerBean(t *testing.T) {
-	resetYadi()
+	ResetYadi()
 	var errServiceF = errors.New("errServiceF")
-	SetBeanProvider(func(ctx Context) (*ServiceF, error) {
+	SetBeanProvider(func(ctx types.Context) (*ServiceF, error) {
 		return nil, errServiceF
 	})
 	ProvideDefaultValues()
@@ -41,7 +42,7 @@ func TestAutoBeanPtrGeneration_WhenCannotBuildInnerBean(t *testing.T) {
 }
 
 func TestAutoBeanGeneration_Success(t *testing.T) {
-	resetYadi()
+	ResetYadi()
 	ProvideDefaultValues()
 	UseLazyContext()
 	serviceABean, err := tryToBuildNewBean(reflect.TypeFor[ServiceA]())
@@ -53,25 +54,25 @@ func TestAutoBeanGeneration_Success(t *testing.T) {
 }
 
 func TestInjectToNotBean_ShouldFail(t *testing.T) {
-	resetYadi()
+	ResetYadi()
 	ProvideDefaultValues()
 	UseLazyContext()
 	abc := ""
 	err := Inject(&abc)
-	require.ErrorIs(t, err, ErrInjectNotSupported)
+	require.ErrorIs(t, err, types.ErrInjectNotSupported)
 }
 
 func TestInjectToNotPtr_ShouldFail(t *testing.T) {
-	resetYadi()
+	ResetYadi()
 	ProvideDefaultValues()
 	UseLazyContext()
 	serviceA := ServiceA{}
 	err := Inject(serviceA)
-	require.ErrorIs(t, err, ErrInjectNotSupported)
+	require.ErrorIs(t, err, types.ErrInjectNotSupported)
 }
 
 func TestInjectToPtr_Success(t *testing.T) {
-	resetYadi()
+	ResetYadi()
 	ProvideDefaultValues()
 	UseLazyContext()
 	serviceA := ServiceA{}
@@ -83,7 +84,7 @@ func TestInjectToPtr_Success(t *testing.T) {
 }
 
 func TestInjectToIgnoreTag_ShouldSkipInjection(t *testing.T) {
-	resetYadi()
+	ResetYadi()
 	ProvideDefaultValues()
 	UseLazyContext()
 	serviceIgnore := ServiceIgnore{}
@@ -108,30 +109,30 @@ func TestTryToBuildNonBeanTypes_ShouldFail(t *testing.T) {
 	for _, test := range tests {
 		t.Run(fmt.Sprintf("%s_ShouldFail", test.T.String()), func(t *testing.T) {
 			_, err := tryToBuildNewBean(test.T)
-			require.ErrorIs(t, err, ErrNonBeanType)
+			require.ErrorIs(t, err, types.ErrNonBeanType)
 		})
 	}
 }
 
 func TestInject_BadTag(t *testing.T) {
-	resetYadi()
+	ResetYadi()
 	ProvideDefaultValues()
 	UseLazyContext()
 	serviceBagTag := ServiceBagTag{}
 	err := Inject(&serviceBagTag)
-	require.ErrorIs(t, err, ErrParseTag)
+	require.ErrorIs(t, err, types.ErrParseTag)
 }
 
 func TestInject_NoValueProvided(t *testing.T) {
-	resetYadi()
+	ResetYadi()
 	UseLazyContext()
 	serviceA := ServiceA{}
 	err := Inject(&serviceA)
-	require.ErrorIs(t, err, ErrNoValueFound)
+	require.ErrorIs(t, err, types.ErrNoValueFound)
 }
 
 func TestInjectLazyBean_Success(t *testing.T) {
-	resetYadi()
+	ResetYadi()
 	ProvideDefaultValues()
 	UseLazyContext()
 
@@ -145,7 +146,7 @@ func TestInjectLazyBean_Success(t *testing.T) {
 }
 
 func TestInjectLazyBean_CannotBuildBean(t *testing.T) {
-	resetYadi()
+	ResetYadi()
 	ProvideDefaultValues()
 	UseLazyContext()
 	err := errors.New("error")
@@ -157,7 +158,7 @@ func TestInjectLazyBean_CannotBuildBean(t *testing.T) {
 		}
 	}()
 
-	SetBeanProvider[*ServiceA](func(ctx Context) (*ServiceA, error) {
+	SetBeanProvider[*ServiceA](func(ctx types.Context) (*ServiceA, error) {
 		return nil, err
 	})
 

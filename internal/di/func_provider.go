@@ -1,7 +1,9 @@
-package yadi
+package di
 
 import (
 	"github.com/pkg/errors"
+	"github.com/xbl4de/yadi/internal/types"
+	"github.com/xbl4de/yadi/internal/utils"
 	"reflect"
 )
 
@@ -47,8 +49,8 @@ func WithDefaultValueAt(paramIndex int, defaultValue interface{}) FuncProviderOp
 	}
 }
 
-func SetBeanProviderFunc[T Bean](function interface{}, opts ...FuncProviderOption) int {
-	return SetBeanProvider(func(ctx Context) (T, error) {
+func SetBeanProviderFunc[T types.Bean](function interface{}, opts ...FuncProviderOption) int {
+	return SetBeanProvider(func(ctx types.Context) (T, error) {
 		cfg := NewFuncProviderConfig()
 		for _, opt := range opts {
 			opt(cfg)
@@ -58,27 +60,27 @@ func SetBeanProviderFunc[T Bean](function interface{}, opts ...FuncProviderOptio
 	})
 }
 
-func providerFromFuncE[T Bean](function interface{}, cfg *FuncProviderConfig) (*ValueBox[T], error) {
+func providerFromFuncE[T types.Bean](function interface{}, cfg *FuncProviderConfig) (*types.ValueBox[T], error) {
 	funcValue := reflect.ValueOf(function)
 	funcType := reflect.TypeOf(function)
 
 	err := validateProviderFunc[T](funcValue, funcType)
 	if err != nil {
-		return EmptyBox[T](), err
+		return types.EmptyBox[T](), err
 	}
 
 	args, err := buildArgs(funcType, cfg)
 	if err != nil {
-		return EmptyBox[T](), err
+		return types.EmptyBox[T](), err
 	}
 
 	outs := funcValue.Call(args)
-	box := buildValueBox[T](outs[0])
+	box := utils.BuildValueBox[T](outs[0])
 
 	if len(outs) == 1 {
 		return box, nil
 	} else {
-		return box, castToErr(outs[1])
+		return box, utils.CastToErr(outs[1])
 	}
 }
 
@@ -106,7 +108,7 @@ func validateProviderFunc[T interface{}](funcValue reflect.Value, funcType refle
 	declaredType := reflect.TypeFor[T]()
 	returnType := funcType.Out(0)
 
-	if isTypesNotCompatible(declaredType, returnType) {
+	if utils.IsTypesNotCompatible(declaredType, returnType) {
 		return errors.Errorf("Expected type %s, but function returns %s", funcType.Out(0), returnType.String())
 	}
 
@@ -120,7 +122,7 @@ func findArgValue(argType reflect.Type, opt *ParameterConfig) (interface{}, erro
 	if argType.Kind() == reflect.Ptr ||
 		argType.Kind() == reflect.Interface ||
 		argType.Kind() == reflect.Struct {
-		return getBeanOrDefault(argType, opt.DefaultValue)
+		return GetBeanOrDefaultFromContext(argType, opt.DefaultValue)
 	}
-	return getGenericValueOrDefault(opt.ValuePath, opt.DefaultValue)
+	return GetGenericValueOrDefault(opt.ValuePath, opt.DefaultValue)
 }

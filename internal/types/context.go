@@ -1,4 +1,4 @@
-package yadi
+package types
 
 import (
 	"reflect"
