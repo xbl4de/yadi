@@ -1,4 +1,4 @@
-package yadi
+package types
 
 import "github.com/pkg/errors"
 
@@ -10,6 +10,6 @@ var ErrParseTag = errors.New("parse tag error")
 var ErrNilContext = errors.New("nil context")
 var ErrContextAlreadyExists = errors.New("context already exists")
 
-func errNoInjectableProvided(err error) bool {
+func ErrNoInjectableProvided(err error) bool {
 	return errors.Is(err, ErrNoBeanProvider) || errors.Is(err, ErrNoValueFound)
 }

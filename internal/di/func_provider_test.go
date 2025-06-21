@@ -1,8 +1,9 @@
-package yadi
+package di
 
 import (
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
+	"github.com/xbl4de/yadi/internal/types"
 	"testing"
 )
 
@@ -59,7 +60,7 @@ func TestFuncProviderConfig_Parameter_AtNegativeIndex(t *testing.T) {
 }
 
 func TestSetBeanProviderFunc_WithOption_DefaultValueProvided(t *testing.T) {
-	resetYadi()
+	ResetYadi()
 	UseLazyContext()
 
 	SetBeanProviderFunc[*ServiceE](NewServiceE, WithDefaultValueAt(0, "test"))
@@ -70,7 +71,7 @@ func TestSetBeanProviderFunc_WithOption_DefaultValueProvided(t *testing.T) {
 }
 
 func TestSetBeanProviderFunc_WithOption_DefaultValueNotProvided(t *testing.T) {
-	resetYadi()
+	ResetYadi()
 	UseLazyContext()
 
 	SetBeanProviderFunc[*ServiceE](NewServiceE)
@@ -79,7 +80,7 @@ func TestSetBeanProviderFunc_WithOption_DefaultValueNotProvided(t *testing.T) {
 }
 
 func TestSetBeanProviderFunc_WithOption_ValuePathProvided(t *testing.T) {
-	resetYadi()
+	ResetYadi()
 	UseLazyContext()
 
 	SetBeanProviderFunc[*ServiceE](NewServiceE,
@@ -92,7 +93,7 @@ func TestSetBeanProviderFunc_WithOption_ValuePathProvided(t *testing.T) {
 }
 
 func TestSetBeanProviderFunc_WithOption_ValuePathNotProvided(t *testing.T) {
-	resetYadi()
+	ResetYadi()
 	UseLazyContext()
 
 	SetBeanProviderFunc[*ServiceE](NewServiceE)
@@ -101,7 +102,7 @@ func TestSetBeanProviderFunc_WithOption_ValuePathNotProvided(t *testing.T) {
 }
 
 func TestSetBeanProviderFunc_WithErrAsSecondReturn_Success(t *testing.T) {
-	resetYadi()
+	ResetYadi()
 	UseLazyContext()
 
 	SetBeanProviderFunc[*ServiceE](func() (*ServiceE, error) {
@@ -113,7 +114,7 @@ func TestSetBeanProviderFunc_WithErrAsSecondReturn_Success(t *testing.T) {
 }
 
 func TestSetBeanProviderFunc_WithBeanAsParameter_Success(t *testing.T) {
-	resetYadi()
+	ResetYadi()
 	ProvideDefaultValues()
 	UseLazyContext()
 	SetBeanProviderFunc[*ServiceB](NewServiceB,
@@ -127,12 +128,12 @@ func TestSetBeanProviderFunc_WithBeanAsParameter_Success(t *testing.T) {
 }
 
 func TestSetBeanProviderFunc_WithBeanAsParameter_Failure(t *testing.T) {
-	resetYadi()
+	ResetYadi()
 	ProvideDefaultValues()
 	UseLazyContext()
 	SetBeanProviderFunc[*ServiceB](NewServiceB,
 		WithDefaultValueAt(0, 14))
-	SetBeanProvider[*ServiceH](func(ctx Context) (*ServiceH, error) {
+	SetBeanProvider[*ServiceH](func(ctx types.Context) (*ServiceH, error) {
 		return nil, errors.New("test-error")
 	})
 	_, err := GetBean[*ServiceB]()
@@ -140,7 +141,7 @@ func TestSetBeanProviderFunc_WithBeanAsParameter_Failure(t *testing.T) {
 }
 
 func TestSetBeanProviderFunc_NotFuncProvided(t *testing.T) {
-	resetYadi()
+	ResetYadi()
 	UseLazyContext()
 	SetBeanProviderFunc[*ServiceE](ServiceE{})
 	_, err := GetBean[*ServiceE]()
@@ -148,7 +149,7 @@ func TestSetBeanProviderFunc_NotFuncProvided(t *testing.T) {
 }
 
 func TestSetBeanProviderFunc_FuncReturnsNothing(t *testing.T) {
-	resetYadi()
+	ResetYadi()
 	UseLazyContext()
 	SetBeanProviderFunc[*ServiceE](func() {})
 	_, err := GetBean[*ServiceE]()
@@ -156,7 +157,7 @@ func TestSetBeanProviderFunc_FuncReturnsNothing(t *testing.T) {
 }
 
 func TestSetBeanProvider_FuncReturnsTooMuch(t *testing.T) {
-	resetYadi()
+	ResetYadi()
 	UseLazyContext()
 	SetBeanProviderFunc[*ServiceE](func() (*ServiceE, error, bool) {
 		return &ServiceE{}, nil, false
@@ -166,7 +167,7 @@ func TestSetBeanProvider_FuncReturnsTooMuch(t *testing.T) {
 }
 
 func TestSetBeanProvider_ReturnTypeMismatch(t *testing.T) {
-	resetYadi()
+	ResetYadi()
 	UseLazyContext()
 	SetBeanProviderFunc[*ServiceE](func() (*ServiceG, error) {
 		return &ServiceG{}, nil
@@ -176,7 +177,7 @@ func TestSetBeanProvider_ReturnTypeMismatch(t *testing.T) {
 }
 
 func TestSetBeanProvider_SecondReturnTypeIsNotError(t *testing.T) {
-	resetYadi()
+	ResetYadi()
 	UseLazyContext()
 
 	SetBeanProviderFunc[*ServiceE](func() (*ServiceE, bool) {

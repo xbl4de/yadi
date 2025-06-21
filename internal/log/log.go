@@ -1,4 +1,4 @@
-package yadi
+package log
 
 import (
 	"log"
@@ -20,3 +20,11 @@ var verboseLog = func() *log.Logger {
 		return log.New(devNull, yadiPrefix, log.LstdFlags)
 	}
 }()
+
+func Log(fmt string, args ...interface{}) {
+	_log.Printf(fmt, args...)
+}
+
+func Verbose(fmt string, args ...interface{}) {
+	verboseLog.Printf(fmt, args...)
+}

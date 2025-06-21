@@ -1,19 +1,22 @@
-package yadi
+package di
 
 import (
 	"github.com/pkg/errors"
+	"github.com/xbl4de/yadi/internal/log"
+	"github.com/xbl4de/yadi/internal/types"
+	"github.com/xbl4de/yadi/internal/utils"
 	"reflect"
 )
 
-func InjectLazyBean[T Bean]() LazyBean[T] {
+func InjectLazyBean[T types.Bean]() types.LazyBean[T] {
 	return func() T {
 		return RequireBean[T]()
 	}
 }
 
 func tryToBuildNewBean(beanType reflect.Type) (interface{}, error) {
-	verboseLog.Printf("Trying to build new bean for type %s", beanType.String())
-	err := validateTypeIsBean(beanType)
+	log.Verbose("Trying to build new bean for type %s", beanType.String())
+	err := utils.ValidateTypeIsBean(beanType)
 	if err != nil {
 		return nil, err
 	}
@@ -31,7 +34,7 @@ func tryToBuildNewBean(beanType reflect.Type) (interface{}, error) {
 		return nil, err
 	}
 
-	verboseLog.Printf("Built new bean for type %s", beanType.String())
+	log.Verbose("Built new bean for type %s", beanType.String())
 	if isTargetTypeIsPointer {
 		return valPtr.Interface(), nil
 	} else {
@@ -39,15 +42,15 @@ func tryToBuildNewBean(beanType reflect.Type) (interface{}, error) {
 	}
 }
 
-func Inject(valuePtr Bean) error {
+func Inject(valuePtr types.Bean) error {
 	return injectToPtr(reflect.ValueOf(valuePtr))
 }
 
 func injectToPtr(reflectValue reflect.Value) error {
 	reflectType := reflectValue.Type()
 
-	if isTypeDoesNotSupportInjection(reflectType) {
-		return errors.Wrapf(ErrInjectNotSupported, "Inject %s to value failed", reflectType.String())
+	if utils.IsTypeDoesNotSupportInjection(reflectType) {
+		return errors.Wrapf(types.ErrInjectNotSupported, "Inject %s to value failed", reflectType.String())
 	}
 
 	if reflectType.Kind() == reflect.Ptr {
@@ -59,7 +62,7 @@ func injectToPtr(reflectValue reflect.Value) error {
 	for i := 0; i < fieldsCount; i++ {
 		field := reflectType.Field(i)
 		fieldValue := reflectValue.Field(i)
-		verboseLog.Printf("Injecting field %s.%s", reflectType.String(), field.Name)
+		log.Verbose("Injecting field %s.%s", reflectType.String(), field.Name)
 		err := injectToField(field, fieldValue)
 		if err != nil {
 			return err
@@ -69,7 +72,7 @@ func injectToPtr(reflectValue reflect.Value) error {
 }
 
 func injectToField(field reflect.StructField, fieldValue reflect.Value) error {
-	yadiTag, err := ParseTag(field.Tag.Get(TagName))
+	yadiTag, err := types.ParseTag(field.Tag.Get(types.TagName))
 	if err != nil {
 		return err
 	}
@@ -85,20 +88,20 @@ func injectToField(field reflect.StructField, fieldValue reflect.Value) error {
 	return nil
 }
 
-func shouldIgnoreInjection(yadiTag *Tag, fieldType reflect.Type) bool {
+func shouldIgnoreInjection(yadiTag *types.Tag, fieldType reflect.Type) bool {
 	return yadiTag.Ignore || fieldType.Kind() == reflect.Func
 }
 
-func getValueToInject(fieldType reflect.Type, yadiTag *Tag) (interface{}, error) {
-	if isTypeBean(fieldType) {
-		bean, err := getBean(fieldType)
+func getValueToInject(fieldType reflect.Type, yadiTag *types.Tag) (interface{}, error) {
+	if utils.IsTypeBean(fieldType) {
+		bean, err := GetBeanFromContext(fieldType)
 		if err != nil {
 			return nil, err
 		}
 		return bean, nil
 	} else {
 		path := yadiTag.ValuePath
-		genericValue, err := getGenericValue(path)
+		genericValue, err := GetGenericValue(path)
 		if err != nil {
 			return nil, err
 		}

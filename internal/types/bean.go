@@ -1,4 +1,4 @@
-package yadi
+package types
 
 import "reflect"
 
@@ -13,11 +13,11 @@ type BeanContainer struct {
 }
 
 type BeanProvider struct {
-	builder         func(ctx Context) (Bean, error)
-	beanType        reflect.Type
-	options         []func(provider *BeanProvider)
-	useExistingBean reflect.Type
-	holdByContext   bool
+	Builder         func(ctx Context) (Bean, error)
+	BeanType        reflect.Type
+	Options         []func(provider *BeanProvider)
+	UseExistingBean reflect.Type
+	HoldByContext   bool
 }
 
 type ValueBox[T interface{}] struct {

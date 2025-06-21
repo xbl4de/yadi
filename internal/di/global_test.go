@@ -1,16 +1,17 @@
-package yadi
+package di
 
 import (
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
+	"github.com/xbl4de/yadi/internal/types"
 	"testing"
 )
 
 func TestSetBeanProvider_ProviderSet(t *testing.T) {
-	resetYadi()
+	ResetYadi()
 	ProvideDefaultValues()
 
-	SetBeanProvider[*ServiceE](func(ctx Context) (*ServiceE, error) {
+	SetBeanProvider[*ServiceE](func(ctx types.Context) (*ServiceE, error) {
 		return &ServiceE{
 			Description: "service E",
 		}, nil
@@ -24,10 +25,10 @@ func TestSetBeanProvider_ProviderSet(t *testing.T) {
 }
 
 func TestSetBeanProvider_ProviderSet_WithHoldByUser(t *testing.T) {
-	resetYadi()
+	ResetYadi()
 	ProvideDefaultValues()
 
-	SetBeanProvider[*ServiceClose](func(ctx Context) (*ServiceClose, error) {
+	SetBeanProvider[*ServiceClose](func(ctx types.Context) (*ServiceClose, error) {
 		return NewServiceClose(), nil
 	}, WithHoldByUser())
 	UseLazyContext()
@@ -42,10 +43,10 @@ func TestSetBeanProvider_ProviderSet_WithHoldByUser(t *testing.T) {
 }
 
 func TestSetBeanProvider_ProviderSet_WithHoldNotByUser(t *testing.T) {
-	resetYadi()
+	ResetYadi()
 	ProvideDefaultValues()
 
-	SetBeanProvider[*ServiceClose](func(ctx Context) (*ServiceClose, error) {
+	SetBeanProvider[*ServiceClose](func(ctx types.Context) (*ServiceClose, error) {
 		return NewServiceClose(), nil
 	})
 	UseLazyContext()
@@ -60,7 +61,7 @@ func TestSetBeanProvider_ProviderSet_WithHoldNotByUser(t *testing.T) {
 }
 
 func TestSetBeanProvider_AutoBuild_ValuesProvided(t *testing.T) {
-	resetYadi()
+	ResetYadi()
 	ProvideDefaultValues()
 	UseLazyContext()
 
@@ -71,37 +72,39 @@ func TestSetBeanProvider_AutoBuild_ValuesProvided(t *testing.T) {
 }
 
 func TestSetBeanProvider_AutoBuild_ValuesNotProvided(t *testing.T) {
-	resetYadi()
+	ResetYadi()
 	UseLazyContext()
 
 	_, err := GetBean[*ServiceE]()
-	require.ErrorIs(t, err, ErrNoValueFound)
+	require.ErrorIs(t, err, types.ErrNoValueFound)
 }
 
 func TestGetBean_WithNilContext(t *testing.T) {
-	resetYadi()
+	ResetYadi()
 	ProvideDefaultValues()
 
-	SetBeanProviderFunc[*ServiceE](NewServiceE,
-		WithDefaultValueAt(0, ServiceEDescription))
+	SetBeanProvider[*ServiceE](func(ctx types.Context) (*ServiceE, error) {
+		return NewServiceE(ServiceEDescription), nil
+	})
 	_, err := GetBean[*ServiceE]()
-	require.ErrorIs(t, err, ErrNilContext)
+	require.ErrorIs(t, err, types.ErrNilContext)
 }
 
 func TestRequireBean_Success(t *testing.T) {
-	resetYadi()
+	ResetYadi()
 	ProvideDefaultValues()
 	UseLazyContext()
 
-	SetBeanProviderFunc[*ServiceE](NewServiceE,
-		WithDefaultValueAt(0, ServiceEDescription))
+	SetBeanProvider[*ServiceE](func(ctx types.Context) (*ServiceE, error) {
+		return NewServiceE(ServiceEDescription), nil
+	})
 	serviceE := RequireBean[*ServiceE]()
 	require.NotNil(t, serviceE)
 	require.Equal(t, ServiceEDescription, serviceE.Description)
 }
 
 func TestRequireBean_CannotBuild(t *testing.T) {
-	resetYadi()
+	ResetYadi()
 	ProvideDefaultValues()
 	UseLazyContext()
 
@@ -113,34 +116,35 @@ func TestRequireBean_CannotBuild(t *testing.T) {
 		}
 	}()
 
-	SetBeanProviderFunc[*ServiceE](func() (*ServiceE, error) {
+	SetBeanProvider[*ServiceE](func(ctx types.Context) (*ServiceE, error) {
 		return nil, errors.New("fail")
 	})
 	_ = RequireBean[*ServiceE]()
 }
 
 func TestRequireBean_NilContext(t *testing.T) {
-	resetYadi()
+	ResetYadi()
 	ProvideDefaultValues()
 
 	defer func() {
 		if r := recover(); r == nil {
 			t.Errorf("The code did not panic")
 		} else {
-			require.ErrorIs(t, r.(error), ErrNilContext)
+			require.ErrorIs(t, r.(error), types.ErrNilContext)
 		}
 	}()
-
-	SetBeanProviderFunc[*ServiceE](NewServiceE)
+	SetBeanProvider[*ServiceE](func(ctx types.Context) (*ServiceE, error) {
+		return NewServiceE("abc"), nil
+	})
 	_ = RequireBean[*ServiceE]()
 }
 
 func TestGetBeanOrDefault_ShouldReturnDefault(t *testing.T) {
-	resetYadi()
+	ResetYadi()
 	ProvideDefaultValues()
 	UseLazyContext()
 
-	SetBeanProvider[*ServiceE](func(ctx Context) (*ServiceE, error) {
+	SetBeanProvider[*ServiceE](func(ctx types.Context) (*ServiceE, error) {
 		return nil, errors.New("fail")
 	})
 
@@ -152,11 +156,11 @@ func TestGetBeanOrDefault_ShouldReturnDefault(t *testing.T) {
 }
 
 func TestGetBeanOrDefault_ShouldReturnRegisteredBean(t *testing.T) {
-	resetYadi()
+	ResetYadi()
 	ProvideDefaultValues()
 	UseLazyContext()
 
-	SetBeanProvider[*ServiceE](func(ctx Context) (*ServiceE, error) {
+	SetBeanProvider[*ServiceE](func(ctx types.Context) (*ServiceE, error) {
 		return &ServiceE{Description: "registered"}, nil
 	})
 
@@ -168,7 +172,7 @@ func TestGetBeanOrDefault_ShouldReturnRegisteredBean(t *testing.T) {
 }
 
 func TestGetBeanOrDefault_NilContext(t *testing.T) {
-	resetYadi()
+	ResetYadi()
 
 	bean := GetBeanOrDefault[*ServiceE](&ServiceE{
 		Description: "abcd",
@@ -178,7 +182,7 @@ func TestGetBeanOrDefault_NilContext(t *testing.T) {
 }
 
 func TestGetValue_FromPresetDefaults(t *testing.T) {
-	resetYadi()
+	ResetYadi()
 	ProvideDefaultValues()
 	UseLazyContext()
 
@@ -188,7 +192,7 @@ func TestGetValue_FromPresetDefaults(t *testing.T) {
 }
 
 func TestGetValue_FromProvided(t *testing.T) {
-	resetYadi()
+	ResetYadi()
 	UseLazyContext()
 
 	SetValue[string]("serviceE.description", "value")
@@ -199,7 +203,7 @@ func TestGetValue_FromProvided(t *testing.T) {
 }
 
 func TestGetValue_GetByWrongType(t *testing.T) {
-	resetYadi()
+	ResetYadi()
 	UseLazyContext()
 
 	SetValue[int]("serviceE.description", 10)
@@ -209,62 +213,62 @@ func TestGetValue_GetByWrongType(t *testing.T) {
 }
 
 func TestGetValue_NilContext(t *testing.T) {
-	resetYadi()
+	ResetYadi()
 
 	SetValue[string]("serviceE.description", "abc")
 
 	_, err := GetValue[string]("serviceE.description")
-	require.ErrorIs(t, err, ErrNilContext)
+	require.ErrorIs(t, err, types.ErrNilContext)
 }
 
 func TestGetValueOrDefault_ShouldReturnDefault(t *testing.T) {
-	resetYadi()
+	ResetYadi()
 	UseLazyContext()
 
-	val := GetValueOrDefault[string]("test.path", "fallback")
+	val := GetValueOrDefault[string]("path", "fallback")
 	require.NotNil(t, val)
 	require.Equal(t, "fallback", val.Value)
 }
 
 func TestGetValueOrDefault_ShouldReturnRegistered(t *testing.T) {
-	resetYadi()
+	ResetYadi()
 	UseLazyContext()
 
-	SetValue[string]("test.path", "registered")
+	SetValue[string]("path", "registered")
 
-	val := GetValueOrDefault[string]("test.path", "fallback")
+	val := GetValueOrDefault[string]("path", "fallback")
 	require.NotNil(t, val)
 	require.Equal(t, "registered", val.Value)
 }
 
 func TestGetValueOrDefault_WrongType_ShouldReturnDefault(t *testing.T) {
-	resetYadi()
+	ResetYadi()
 	UseLazyContext()
 
-	SetValue[string]("test.path", "registered")
+	SetValue[string]("path", "registered")
 
-	val := GetValueOrDefault[int]("test.path", 10)
+	val := GetValueOrDefault[int]("path", 10)
 	require.NotNil(t, val)
 	require.Equal(t, 10, val.Value)
 }
 
 func TestGetValueOrDefault_NilContext(t *testing.T) {
-	resetYadi()
-	SetValue[int]("test.path", 10)
+	ResetYadi()
+	SetValue[int]("path", 10)
 
-	val := GetValueOrDefault[int]("test.path", 12)
+	val := GetValueOrDefault[int]("path", 12)
 	require.NotNil(t, val)
 	require.Equal(t, 12, val.Value)
 }
 
 func TestUseLazyContext_UseTwice_ShouldPanic(t *testing.T) {
-	resetYadi()
+	ResetYadi()
 
 	defer func() {
 		if r := recover(); r == nil {
 			t.Errorf("The code did not panic")
 		} else {
-			require.ErrorIs(t, r.(error), ErrContextAlreadyExists)
+			require.ErrorIs(t, r.(error), types.ErrContextAlreadyExists)
 		}
 	}()
 
@@ -273,7 +277,7 @@ func TestUseLazyContext_UseTwice_ShouldPanic(t *testing.T) {
 }
 
 func TestGetBean_InterfaceType_FromPointerProvider(t *testing.T) {
-	resetYadi()
+	ResetYadi()
 	ProvideDefaultValues()
 	UseLazyContext()
 
@@ -287,7 +291,7 @@ func TestGetBean_InterfaceType_FromPointerProvider(t *testing.T) {
 }
 
 func TestGetBean_InterfaceType_FromInterfaceProvider(t *testing.T) {
-	resetYadi()
+	ResetYadi()
 	ProvideDefaultValues()
 	UseLazyContext()
 
