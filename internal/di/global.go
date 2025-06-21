@@ -69,7 +69,7 @@ func GetBean[T types.Bean]() (*types.ValueBox[T], error) {
 		return nil, errors.Errorf("Failed to cast bean to type %s: actual type is %s",
 			p.String(), reflect.TypeOf(bean).String())
 	}
-	return &types.ValueBox[T]{casted}, nil
+	return &types.ValueBox[T]{Value: casted}, nil
 }
 
 func RequireBean[T types.Bean]() T {
@@ -129,13 +129,13 @@ func GetValue[T interface{}](path string) (*types.ValueBox[T], error) {
 		typeName := reflect.TypeFor[T]().String()
 		return types.EmptyBox[T](), errors.Errorf("expected type %s but got %T", typeName, val)
 	}
-	return &types.ValueBox[T]{casted}, nil
+	return &types.ValueBox[T]{Value: casted}, nil
 }
 
 func GetValueOrDefault[T interface{}](path string, defaultValue T) *types.ValueBox[T] {
 	val, err := GetValue[T](path)
 	if err != nil {
-		return &types.ValueBox[T]{defaultValue}
+		return &types.ValueBox[T]{Value: defaultValue}
 	}
 	return val
 }

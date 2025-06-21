@@ -2,33 +2,37 @@ package di
 
 import (
 	"fmt"
+	g "github.com/onsi/gomega"
 	"github.com/pkg/errors"
-	"github.com/stretchr/testify/require"
 	"github.com/xbl4de/yadi/internal/types"
 	"reflect"
 	"testing"
 )
 
-func requireType[T types.Bean](t *testing.T, val interface{}) T {
+func requireType[T types.Bean](val interface{}) T {
 	casted, ok := val.(T)
-	require.True(t, ok)
+	g.Expect(ok).Should(g.BeTrue())
 	return casted
 }
 
 func TestAutoBeanPtrGeneration_Success(t *testing.T) {
+	g.RegisterTestingT(t)
 	ResetYadi()
 	ProvideDefaultValues()
 	UseLazyContext()
+
 	serviceABean, err := tryToBuildNewBean(reflect.TypeFor[*ServiceA]())
-	serviceA := requireType[*ServiceA](t, serviceABean)
-	require.NoError(t, err)
-	require.NotNil(t, serviceA)
-	require.NotNil(t, serviceA.ServiceE)
-	require.NotNil(t, serviceA.ServiceF)
-	require.Equal(t, ServiceAName, serviceA.Name)
+	serviceA := requireType[*ServiceA](serviceABean)
+
+	g.Expect(err).ShouldNot(g.HaveOccurred())
+	g.Expect(serviceA).ShouldNot(g.BeNil())
+	g.Expect(serviceA.ServiceF).ShouldNot(g.BeNil())
+	g.Expect(serviceA.ServiceF).ShouldNot(g.BeNil())
+	g.Expect(serviceA.Name).Should(g.Equal(ServiceAName))
 }
 
 func TestAutoBeanPtrGeneration_WhenCannotBuildInnerBean(t *testing.T) {
+	g.RegisterTestingT(t)
 	ResetYadi()
 	var errServiceF = errors.New("errServiceF")
 	SetBeanProvider(func(ctx types.Context) (*ServiceF, error) {
@@ -36,9 +40,9 @@ func TestAutoBeanPtrGeneration_WhenCannotBuildInnerBean(t *testing.T) {
 	})
 	ProvideDefaultValues()
 	UseLazyContext()
-	serviceA, err := tryToBuildNewBean(reflect.TypeFor[*ServiceA]())
-	require.ErrorIs(t, err, errServiceF)
-	require.Nil(t, serviceA)
+
+	_, err := tryToBuildNewBean(reflect.TypeFor[*ServiceA]())
+	g.Expect(err).Should(g.MatchError(errServiceF))
 }
 
 func TestAutoBeanGeneration_Success(t *testing.T) {
@@ -46,54 +50,70 @@ func TestAutoBeanGeneration_Success(t *testing.T) {
 	ProvideDefaultValues()
 	UseLazyContext()
 	serviceABean, err := tryToBuildNewBean(reflect.TypeFor[ServiceA]())
-	serviceA := requireType[ServiceA](t, serviceABean)
-	require.NoError(t, err)
-	require.NotNil(t, serviceA.ServiceE)
-	require.NotNil(t, serviceA.ServiceF)
-	require.Equal(t, ServiceAName, serviceA.Name)
+	serviceA := requireType[ServiceA](serviceABean)
+
+	g.Expect(err).ShouldNot(g.HaveOccurred())
+	g.Expect(serviceA).ShouldNot(g.BeNil())
+	g.Expect(serviceA.ServiceF).ShouldNot(g.BeNil())
+	g.Expect(serviceA.ServiceF).ShouldNot(g.BeNil())
+	g.Expect(serviceA.Name).Should(g.Equal(ServiceAName))
 }
 
 func TestInjectToNotBean_ShouldFail(t *testing.T) {
+	g.RegisterTestingT(t)
 	ResetYadi()
 	ProvideDefaultValues()
 	UseLazyContext()
 	abc := ""
 	err := Inject(&abc)
-	require.ErrorIs(t, err, types.ErrInjectNotSupported)
+
+	g.Expect(err).Should(g.MatchError(types.ErrInjectNotSupported))
 }
 
 func TestInjectToNotPtr_ShouldFail(t *testing.T) {
+	g.RegisterTestingT(t)
 	ResetYadi()
 	ProvideDefaultValues()
 	UseLazyContext()
+
 	serviceA := ServiceA{}
 	err := Inject(serviceA)
-	require.ErrorIs(t, err, types.ErrInjectNotSupported)
+
+	g.Expect(err).Should(g.MatchError(types.ErrInjectNotSupported))
 }
 
 func TestInjectToPtr_Success(t *testing.T) {
+	g.RegisterTestingT(t)
 	ResetYadi()
 	ProvideDefaultValues()
 	UseLazyContext()
+
 	serviceA := ServiceA{}
 	err := Inject(&serviceA)
-	require.NoError(t, err)
-	require.NotNil(t, serviceA.ServiceE)
-	require.NotNil(t, serviceA.ServiceF)
-	require.Equal(t, ServiceAName, serviceA.Name)
+
+	g.Expect(err).ShouldNot(g.HaveOccurred())
+	g.Expect(serviceA).ShouldNot(g.BeNil())
+	g.Expect(serviceA.ServiceF).ShouldNot(g.BeNil())
+	g.Expect(serviceA.ServiceF).ShouldNot(g.BeNil())
+	g.Expect(serviceA.Name).Should(g.Equal(ServiceAName))
 }
 
 func TestInjectToIgnoreTag_ShouldSkipInjection(t *testing.T) {
+	g.RegisterTestingT(t)
 	ResetYadi()
 	ProvideDefaultValues()
 	UseLazyContext()
+
 	serviceIgnore := ServiceIgnore{}
 	err := Inject(&serviceIgnore)
-	require.NoError(t, err)
-	require.Nil(t, serviceIgnore.ServiceA)
+
+	g.Expect(err).ShouldNot(g.HaveOccurred())
+	g.Expect(serviceIgnore).ShouldNot(g.BeNil())
+	g.Expect(serviceIgnore.ServiceA).Should(g.BeNil())
 }
 
 func TestTryToBuildNonBeanTypes_ShouldFail(t *testing.T) {
+	g.RegisterTestingT(t)
 	tests := []struct {
 		T reflect.Type
 	}{
@@ -109,60 +129,67 @@ func TestTryToBuildNonBeanTypes_ShouldFail(t *testing.T) {
 	for _, test := range tests {
 		t.Run(fmt.Sprintf("%s_ShouldFail", test.T.String()), func(t *testing.T) {
 			_, err := tryToBuildNewBean(test.T)
-			require.ErrorIs(t, err, types.ErrNonBeanType)
+			g.Expect(err).Should(g.MatchError(types.ErrNonBeanType))
 		})
 	}
 }
 
 func TestInject_BadTag(t *testing.T) {
+	g.RegisterTestingT(t)
 	ResetYadi()
 	ProvideDefaultValues()
 	UseLazyContext()
+
 	serviceBagTag := ServiceBagTag{}
 	err := Inject(&serviceBagTag)
-	require.ErrorIs(t, err, types.ErrParseTag)
+
+	g.Expect(err).Should(g.MatchError(types.ErrParseTag))
 }
 
 func TestInject_NoValueProvided(t *testing.T) {
+	g.RegisterTestingT(t)
 	ResetYadi()
 	UseLazyContext()
+
 	serviceA := ServiceA{}
 	err := Inject(&serviceA)
-	require.ErrorIs(t, err, types.ErrNoValueFound)
+
+	g.Expect(err).Should(g.MatchError(types.ErrNoValueFound))
 }
 
 func TestInjectLazyBean_Success(t *testing.T) {
+	g.RegisterTestingT(t)
 	ResetYadi()
 	ProvideDefaultValues()
 	UseLazyContext()
 
 	serviceA := InjectLazyBean[*ServiceA]()
-	require.NotNil(t, serviceA)
+
+	g.Expect(serviceA).ShouldNot(g.BeNil())
+
 	val := serviceA()
-	require.NotNil(t, val)
-	require.Equal(t, ServiceAName, val.Name)
-	require.NotNil(t, val.ServiceE)
-	require.NotNil(t, val.ServiceF)
+
+	g.Expect(val).ShouldNot(g.BeNil())
+	g.Expect(val.ServiceF).ShouldNot(g.BeNil())
+	g.Expect(val.ServiceF).ShouldNot(g.BeNil())
+	g.Expect(val.Name).Should(g.Equal(ServiceAName))
 }
 
 func TestInjectLazyBean_CannotBuildBean(t *testing.T) {
+	g.RegisterTestingT(t)
 	ResetYadi()
 	ProvideDefaultValues()
 	UseLazyContext()
 	err := errors.New("error")
-	defer func() {
-		if r := recover(); r == nil {
-			t.Errorf("The code did not panic")
-		} else {
-			require.ErrorIs(t, r.(error), err)
-		}
-	}()
 
 	SetBeanProvider[*ServiceA](func(ctx types.Context) (*ServiceA, error) {
 		return nil, err
 	})
 
 	serviceA := InjectLazyBean[*ServiceA]()
-	require.NotNil(t, serviceA)
-	_ = serviceA()
+
+	g.Expect(serviceA).ShouldNot(g.BeNil())
+	g.Expect(func() {
+		_ = serviceA()
+	}).Should(g.PanicWith(g.MatchError(err)))
 }
