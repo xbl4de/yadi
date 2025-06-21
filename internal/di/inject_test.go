@@ -4,12 +4,12 @@ import (
 	"fmt"
 	g "github.com/onsi/gomega"
 	"github.com/pkg/errors"
-	types2 "github.com/xbl4de/yadi/types"
+	"github.com/xbl4de/yadi/types"
 	"reflect"
 	"testing"
 )
 
-func requireType[T types2.Bean](val interface{}) T {
+func requireType[T types.Bean](val interface{}) T {
 	casted, ok := val.(T)
 	g.Expect(ok).Should(g.BeTrue())
 	return casted
@@ -35,7 +35,7 @@ func TestAutoBeanPtrGeneration_WhenCannotBuildInnerBean(t *testing.T) {
 	g.RegisterTestingT(t)
 	ResetYadi()
 	var errServiceF = errors.New("errServiceF")
-	SetBeanProvider(func(ctx types2.Context) (*ServiceF, error) {
+	SetBeanProvider(func(ctx types.Context) (*ServiceF, error) {
 		return nil, errServiceF
 	})
 	ProvideDefaultValues()
@@ -67,7 +67,7 @@ func TestInjectToNotBean_ShouldFail(t *testing.T) {
 	abc := ""
 	err := Inject(&abc)
 
-	g.Expect(err).Should(g.MatchError(types2.ErrInjectNotSupported))
+	g.Expect(err).Should(g.MatchError(types.ErrInjectNotSupported))
 }
 
 func TestInjectToNotPtr_ShouldFail(t *testing.T) {
@@ -79,7 +79,7 @@ func TestInjectToNotPtr_ShouldFail(t *testing.T) {
 	serviceA := ServiceA{}
 	err := Inject(serviceA)
 
-	g.Expect(err).Should(g.MatchError(types2.ErrInjectNotSupported))
+	g.Expect(err).Should(g.MatchError(types.ErrInjectNotSupported))
 }
 
 func TestInjectToPtr_Success(t *testing.T) {
@@ -129,7 +129,7 @@ func TestTryToBuildNonBeanTypes_ShouldFail(t *testing.T) {
 	for _, test := range tests {
 		t.Run(fmt.Sprintf("%s_ShouldFail", test.T.String()), func(t *testing.T) {
 			_, err := tryToBuildNewBean(test.T)
-			g.Expect(err).Should(g.MatchError(types2.ErrNonBeanType))
+			g.Expect(err).Should(g.MatchError(types.ErrNonBeanType))
 		})
 	}
 }
@@ -143,7 +143,7 @@ func TestInject_BadTag(t *testing.T) {
 	serviceBagTag := ServiceBagTag{}
 	err := Inject(&serviceBagTag)
 
-	g.Expect(err).Should(g.MatchError(types2.ErrParseTag))
+	g.Expect(err).Should(g.MatchError(types.ErrParseTag))
 }
 
 func TestInject_NoValueProvided(t *testing.T) {
@@ -154,7 +154,7 @@ func TestInject_NoValueProvided(t *testing.T) {
 	serviceA := ServiceA{}
 	err := Inject(&serviceA)
 
-	g.Expect(err).Should(g.MatchError(types2.ErrNoValueFound))
+	g.Expect(err).Should(g.MatchError(types.ErrNoValueFound))
 }
 
 func TestInjectLazyBean_Success(t *testing.T) {
@@ -182,7 +182,7 @@ func TestInjectLazyBean_CannotBuildBean(t *testing.T) {
 	UseLazyContext()
 	err := errors.New("error")
 
-	SetBeanProvider[*ServiceA](func(ctx types2.Context) (*ServiceA, error) {
+	SetBeanProvider[*ServiceA](func(ctx types.Context) (*ServiceA, error) {
 		return nil, err
 	})
 

@@ -3,7 +3,7 @@ package di
 import (
 	g "github.com/onsi/gomega"
 	"github.com/pkg/errors"
-	types2 "github.com/xbl4de/yadi/types"
+	"github.com/xbl4de/yadi/types"
 	"testing"
 )
 
@@ -12,7 +12,7 @@ func TestSetBeanProvider_ProviderSet(t *testing.T) {
 	ResetYadi()
 	ProvideDefaultValues()
 
-	SetBeanProvider[*ServiceE](func(ctx types2.Context) (*ServiceE, error) {
+	SetBeanProvider[*ServiceE](func(ctx types.Context) (*ServiceE, error) {
 		return &ServiceE{
 			Description: "service E",
 		}, nil
@@ -31,7 +31,7 @@ func TestSetBeanProvider_ProviderSet_WithHoldByUser(t *testing.T) {
 	ResetYadi()
 	ProvideDefaultValues()
 
-	SetBeanProvider[*ServiceClose](func(ctx types2.Context) (*ServiceClose, error) {
+	SetBeanProvider[*ServiceClose](func(ctx types.Context) (*ServiceClose, error) {
 		return NewServiceClose(), nil
 	}, WithHoldByUser())
 	UseLazyContext()
@@ -53,7 +53,7 @@ func TestSetBeanProvider_ProviderSet_WithHoldNotByUser(t *testing.T) {
 	ResetYadi()
 	ProvideDefaultValues()
 
-	SetBeanProvider[*ServiceClose](func(ctx types2.Context) (*ServiceClose, error) {
+	SetBeanProvider[*ServiceClose](func(ctx types.Context) (*ServiceClose, error) {
 		return NewServiceClose(), nil
 	})
 	UseLazyContext()
@@ -90,7 +90,7 @@ func TestSetBeanProvider_AutoBuild_ValuesNotProvided(t *testing.T) {
 
 	_, err := GetBean[*ServiceE]()
 
-	g.Expect(err).Should(g.MatchError(types2.ErrNoValueFound))
+	g.Expect(err).Should(g.MatchError(types.ErrNoValueFound))
 }
 
 func TestGetBean_WithNilContext(t *testing.T) {
@@ -98,12 +98,12 @@ func TestGetBean_WithNilContext(t *testing.T) {
 	ResetYadi()
 	ProvideDefaultValues()
 
-	SetBeanProvider[*ServiceE](func(ctx types2.Context) (*ServiceE, error) {
+	SetBeanProvider[*ServiceE](func(ctx types.Context) (*ServiceE, error) {
 		return NewServiceE(ServiceEDescription), nil
 	})
 	_, err := GetBean[*ServiceE]()
 
-	g.Expect(err).Should(g.MatchError(types2.ErrNilContext))
+	g.Expect(err).Should(g.MatchError(types.ErrNilContext))
 }
 
 func TestRequireBean_Success(t *testing.T) {
@@ -112,7 +112,7 @@ func TestRequireBean_Success(t *testing.T) {
 	ProvideDefaultValues()
 	UseLazyContext()
 
-	SetBeanProvider[*ServiceE](func(ctx types2.Context) (*ServiceE, error) {
+	SetBeanProvider[*ServiceE](func(ctx types.Context) (*ServiceE, error) {
 		return NewServiceE(ServiceEDescription), nil
 	})
 	serviceE := RequireBean[*ServiceE]()
@@ -127,7 +127,7 @@ func TestRequireBean_CannotBuild(t *testing.T) {
 	ProvideDefaultValues()
 	UseLazyContext()
 
-	SetBeanProvider[*ServiceE](func(ctx types2.Context) (*ServiceE, error) {
+	SetBeanProvider[*ServiceE](func(ctx types.Context) (*ServiceE, error) {
 		return nil, errors.New("fail")
 	})
 
@@ -141,13 +141,13 @@ func TestRequireBean_NilContext(t *testing.T) {
 	ResetYadi()
 	ProvideDefaultValues()
 
-	SetBeanProvider[*ServiceE](func(ctx types2.Context) (*ServiceE, error) {
+	SetBeanProvider[*ServiceE](func(ctx types.Context) (*ServiceE, error) {
 		return NewServiceE("abc"), nil
 	})
 
 	g.Expect(func() {
 		RequireBean[*ServiceE]()
-	}).Should(g.PanicWith(g.MatchError(types2.ErrNilContext)))
+	}).Should(g.PanicWith(g.MatchError(types.ErrNilContext)))
 }
 
 func TestGetBeanOrDefault_ShouldReturnDefault(t *testing.T) {
@@ -156,7 +156,7 @@ func TestGetBeanOrDefault_ShouldReturnDefault(t *testing.T) {
 	ProvideDefaultValues()
 	UseLazyContext()
 
-	SetBeanProvider[*ServiceE](func(ctx types2.Context) (*ServiceE, error) {
+	SetBeanProvider[*ServiceE](func(ctx types.Context) (*ServiceE, error) {
 		return nil, errors.New("fail")
 	})
 
@@ -174,7 +174,7 @@ func TestGetBeanOrDefault_ShouldReturnRegisteredBean(t *testing.T) {
 	ProvideDefaultValues()
 	UseLazyContext()
 
-	SetBeanProvider[*ServiceE](func(ctx types2.Context) (*ServiceE, error) {
+	SetBeanProvider[*ServiceE](func(ctx types.Context) (*ServiceE, error) {
 		return &ServiceE{Description: "registered"}, nil
 	})
 
@@ -243,7 +243,7 @@ func TestGetValue_NilContext(t *testing.T) {
 
 	_, err := GetValue[string]("serviceE.description")
 
-	g.Expect(err).Should(g.MatchError(types2.ErrNilContext))
+	g.Expect(err).Should(g.MatchError(types.ErrNilContext))
 }
 
 func TestGetValueOrDefault_ShouldReturnDefault(t *testing.T) {

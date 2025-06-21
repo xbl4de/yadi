@@ -3,7 +3,7 @@ package di
 import (
 	"fmt"
 	g "github.com/onsi/gomega"
-	types2 "github.com/xbl4de/yadi/types"
+	"github.com/xbl4de/yadi/types"
 	"testing"
 )
 
@@ -28,7 +28,7 @@ type NewB struct {
 }
 
 type LazyC struct {
-	B types2.LazyBean[*NewB]
+	B types.LazyBean[*NewB]
 }
 
 func TestCycleDependencies_BeanA(t *testing.T) {
@@ -38,7 +38,7 @@ func TestCycleDependencies_BeanA(t *testing.T) {
 
 	_, err := GetBean[*A]()
 
-	g.Expect(err).Should(g.MatchError(types2.ErrCycleDependencies))
+	g.Expect(err).Should(g.MatchError(types.ErrCycleDependencies))
 	fmt.Println(err)
 }
 
@@ -49,7 +49,7 @@ func TestCycleDependencies_BeanB(t *testing.T) {
 
 	_, err := GetBean[*B]()
 
-	g.Expect(err).Should(g.MatchError(types2.ErrCycleDependencies))
+	g.Expect(err).Should(g.MatchError(types.ErrCycleDependencies))
 }
 
 func TestCycleDependencies_BeanC(t *testing.T) {
@@ -59,7 +59,7 @@ func TestCycleDependencies_BeanC(t *testing.T) {
 
 	_, err := GetBean[*C]()
 
-	g.Expect(err).Should(g.MatchError(types2.ErrCycleDependencies))
+	g.Expect(err).Should(g.MatchError(types.ErrCycleDependencies))
 }
 
 func TestCycleDependencies_BeanLazy(t *testing.T) {
@@ -67,7 +67,7 @@ func TestCycleDependencies_BeanLazy(t *testing.T) {
 	ResetYadi()
 	UseLazyContext()
 
-	SetBeanProvider[*LazyC](func(ctx types2.Context) (*LazyC, error) {
+	SetBeanProvider[*LazyC](func(ctx types.Context) (*LazyC, error) {
 		return &LazyC{
 			B: NewLazyBean[*NewB](),
 		}, nil
