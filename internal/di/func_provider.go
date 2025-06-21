@@ -2,8 +2,8 @@ package di
 
 import (
 	"github.com/pkg/errors"
-	"github.com/xbl4de/yadi/internal/types"
 	"github.com/xbl4de/yadi/internal/utils"
+	types2 "github.com/xbl4de/yadi/types"
 	"reflect"
 )
 
@@ -49,8 +49,8 @@ func WithDefaultValueAt(paramIndex int, defaultValue interface{}) FuncProviderOp
 	}
 }
 
-func SetBeanProviderFunc[T types.Bean](function interface{}, opts ...FuncProviderOption) int {
-	return SetBeanProvider(func(ctx types.Context) (T, error) {
+func SetBeanProviderFunc[T types2.Bean](function interface{}, opts ...FuncProviderOption) int {
+	return SetBeanProvider(func(ctx types2.Context) (T, error) {
 		cfg := NewFuncProviderConfig()
 		for _, opt := range opts {
 			opt(cfg)
@@ -60,18 +60,18 @@ func SetBeanProviderFunc[T types.Bean](function interface{}, opts ...FuncProvide
 	})
 }
 
-func providerFromFuncE[T types.Bean](function interface{}, cfg *FuncProviderConfig) (*types.ValueBox[T], error) {
+func providerFromFuncE[T types2.Bean](function interface{}, cfg *FuncProviderConfig) (*types2.ValueBox[T], error) {
 	funcValue := reflect.ValueOf(function)
 	funcType := reflect.TypeOf(function)
 
 	err := validateProviderFunc[T](funcValue, funcType)
 	if err != nil {
-		return types.EmptyBox[T](), err
+		return types2.EmptyBox[T](), err
 	}
 
 	args, err := buildArgs(funcType, cfg)
 	if err != nil {
-		return types.EmptyBox[T](), err
+		return types2.EmptyBox[T](), err
 	}
 
 	outs := funcValue.Call(args)

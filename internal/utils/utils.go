@@ -2,7 +2,7 @@ package utils
 
 import (
 	"github.com/pkg/errors"
-	"github.com/xbl4de/yadi/internal/types"
+	types2 "github.com/xbl4de/yadi/types"
 	"reflect"
 )
 
@@ -11,13 +11,13 @@ func ValidateTypeIsBean(beanType reflect.Type) error {
 		if beanType.Elem().Kind() == reflect.Struct {
 			return nil
 		} else {
-			return errors.Wrapf(types.ErrNonBeanType, "pointer to %s", beanType.String())
+			return errors.Wrapf(types2.ErrNonBeanType, "pointer to %s", beanType.String())
 		}
 	}
 	if beanType.Kind() == reflect.Struct || beanType.Kind() == reflect.Interface {
 		return nil
 	} else {
-		return errors.Wrapf(types.ErrNonBeanType, "%s", beanType.String())
+		return errors.Wrapf(types2.ErrNonBeanType, "%s", beanType.String())
 	}
 }
 
@@ -33,7 +33,7 @@ func IsTypeDoesNotSupportInjection(beanType reflect.Type) bool {
 	return !IsTypeSupportInjection(beanType)
 }
 
-func ConvertToBean(reflectVal reflect.Value) types.Bean {
+func ConvertToBean(reflectVal reflect.Value) types2.Bean {
 	return reflectVal.Interface()
 }
 
@@ -44,8 +44,8 @@ func CastToErr(errVal reflect.Value) error {
 	return errVal.Elem().Interface().(error)
 }
 
-func BuildValueBox[T interface{}](reflectVal reflect.Value) *types.ValueBox[T] {
-	return &types.ValueBox[T]{Value: ConvertToBean(reflectVal).(T)}
+func BuildValueBox[T interface{}](reflectVal reflect.Value) *types2.ValueBox[T] {
+	return &types2.ValueBox[T]{Value: ConvertToBean(reflectVal).(T)}
 }
 
 func IsTypesNotCompatible(declaredType reflect.Type, returnType reflect.Type) bool {

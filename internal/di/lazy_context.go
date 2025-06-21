@@ -3,7 +3,7 @@ package di
 import (
 	"fmt"
 	"github.com/pkg/errors"
-	"github.com/xbl4de/yadi/internal/types"
+	types2 "github.com/xbl4de/yadi/types"
 	"io"
 	"reflect"
 	"slices"
@@ -11,16 +11,16 @@ import (
 )
 
 type LazyContext struct {
-	beans       map[reflect.Type]*types.BeanContainer
-	providers   map[reflect.Type]*types.BeanProvider
+	beans       map[reflect.Type]*types2.BeanContainer
+	providers   map[reflect.Type]*types2.BeanProvider
 	values      map[string]interface{}
 	injectStack []reflect.Type
 }
 
-func NewLazyContext(updates []func(ctx types.Context) error) *LazyContext {
+func NewLazyContext(updates []func(ctx types2.Context) error) *LazyContext {
 	ctx := &LazyContext{
-		beans:       make(map[reflect.Type]*types.BeanContainer),
-		providers:   make(map[reflect.Type]*types.BeanProvider),
+		beans:       make(map[reflect.Type]*types2.BeanContainer),
+		providers:   make(map[reflect.Type]*types2.BeanProvider),
 		values:      make(map[string]interface{}),
 		injectStack: make([]reflect.Type, 0),
 	}
@@ -53,18 +53,18 @@ func (ctx *LazyContext) Close() error {
 	return nil
 }
 
-func (ctx *LazyContext) addProviders(providers []*types.BeanProvider) {
+func (ctx *LazyContext) addProviders(providers []*types2.BeanProvider) {
 	for _, provider := range providers {
 		ctx.providers[provider.BeanType] = provider
 	}
 }
 
-func (ctx *LazyContext) Register(provider *types.BeanProvider) error {
+func (ctx *LazyContext) Register(provider *types2.BeanProvider) error {
 	ctx.providers[provider.BeanType] = provider
 	return nil
 }
 
-func (ctx *LazyContext) Get(p reflect.Type) (types.Bean, error) {
+func (ctx *LazyContext) Get(p reflect.Type) (types2.Bean, error) {
 	var err error
 	err = ctx.pushInjectStack(p)
 	defer ctx.popInjectStack()
@@ -81,16 +81,16 @@ func (ctx *LazyContext) Get(p reflect.Type) (types.Bean, error) {
 	return beanContainer.Bean, nil
 }
 
-func (ctx *LazyContext) initBean(p reflect.Type) (*types.BeanContainer, error) {
-	var provider *types.BeanProvider
+func (ctx *LazyContext) initBean(p reflect.Type) (*types2.BeanContainer, error) {
+	var provider *types2.BeanProvider
 	var ok bool
-	var beanContainer *types.BeanContainer
+	var beanContainer *types2.BeanContainer
 	if provider, ok = ctx.providers[p]; !ok {
 		val, err := tryToBuildNewBean(p)
 		if err != nil {
 			return nil, err
 		}
-		beanContainer = &types.BeanContainer{
+		beanContainer = &types2.BeanContainer{
 			Bean:          val,
 			Type:          p,
 			HoldByContext: true,
@@ -103,7 +103,7 @@ func (ctx *LazyContext) initBean(p reflect.Type) (*types.BeanContainer, error) {
 		if err != nil {
 			return nil, err
 		}
-		beanContainer = &types.BeanContainer{
+		beanContainer = &types2.BeanContainer{
 			Bean:          existingBean,
 			Type:          provider.BeanType,
 			HoldByContext: false,
@@ -113,7 +113,7 @@ func (ctx *LazyContext) initBean(p reflect.Type) (*types.BeanContainer, error) {
 		if err != nil {
 			return nil, err
 		}
-		beanContainer = &types.BeanContainer{
+		beanContainer = &types2.BeanContainer{
 			Bean:          bean,
 			Type:          provider.BeanType,
 			HoldByContext: provider.HoldByContext,
@@ -127,7 +127,7 @@ func (ctx *LazyContext) GetGenericValue(path string) (interface{}, error) {
 	if val, ok := ctx.values[path]; ok {
 		return val, nil
 	}
-	return nil, types.ErrNoValueFound
+	return nil, types2.ErrNoValueFound
 }
 
 func (ctx *LazyContext) SetGenericValue(path string, value interface{}) {
@@ -137,7 +137,7 @@ func (ctx *LazyContext) SetGenericValue(path string, value interface{}) {
 func (ctx *LazyContext) pushInjectStack(p reflect.Type) error {
 	if slices.Contains(ctx.injectStack, p) {
 		diStack := ctx.dumpDiStack(p)
-		return fmt.Errorf("%w: cannot inject to\n%s", types.ErrCycleDependencies, diStack)
+		return fmt.Errorf("%w: cannot inject to\n%s", types2.ErrCycleDependencies, diStack)
 	}
 	ctx.injectStack = append(ctx.injectStack, p)
 	return nil

@@ -3,26 +3,26 @@ package di
 import (
 	"github.com/pkg/errors"
 	log2 "github.com/xbl4de/yadi/internal/log"
-	"github.com/xbl4de/yadi/internal/types"
 	"github.com/xbl4de/yadi/internal/utils"
+	types2 "github.com/xbl4de/yadi/types"
 	"log"
 	"reflect"
 )
 
-var globalCtx types.Context
+var globalCtx types2.Context
 
-var deferredUpdates []func(ctx types.Context) error
+var deferredUpdates []func(ctx types2.Context) error
 
 const dummyInt = 42
 
-func GlobalCtx() types.Context {
+func GlobalCtx() types2.Context {
 	return globalCtx
 }
 
-func SetBeanProvider[T types.Bean](builder func(ctx types.Context) (T, error), options ...func(provider *types.BeanProvider)) int {
+func SetBeanProvider[T types2.Bean](builder func(ctx types2.Context) (T, error), options ...func(provider *types2.BeanProvider)) int {
 	beanType := reflect.TypeFor[T]()
-	provider := &types.BeanProvider{
-		Builder: func(ctx types.Context) (types.Bean, error) {
+	provider := &types2.BeanProvider{
+		Builder: func(ctx types2.Context) (types2.Bean, error) {
 			return builder(ctx)
 		},
 		BeanType:      beanType,
@@ -37,23 +37,23 @@ func SetBeanProvider[T types.Bean](builder func(ctx types.Context) (T, error), o
 	return dummyInt
 }
 
-func ProvideAsExistingBean[T, E types.Bean]() int {
+func ProvideAsExistingBean[T, E types2.Bean]() int {
 	// TODO: add option
 	return dummyInt
 }
 
-func WithHoldByUser() func(provider *types.BeanProvider) {
-	return func(provider *types.BeanProvider) {
+func WithHoldByUser() func(provider *types2.BeanProvider) {
+	return func(provider *types2.BeanProvider) {
 		provider.HoldByContext = false
 	}
 }
 
 type BeanProviderContainer struct {
-	Provider types.BeanProvider
+	Provider types2.BeanProvider
 	Type     reflect.Type
 }
 
-func GetBean[T types.Bean]() (*types.ValueBox[T], error) {
+func GetBean[T types2.Bean]() (*types2.ValueBox[T], error) {
 	err := ensureContext()
 	if err != nil {
 		return nil, err
@@ -69,10 +69,10 @@ func GetBean[T types.Bean]() (*types.ValueBox[T], error) {
 		return nil, errors.Errorf("Failed to cast bean to type %s: actual type is %s",
 			p.String(), reflect.TypeOf(bean).String())
 	}
-	return &types.ValueBox[T]{Value: casted}, nil
+	return &types2.ValueBox[T]{Value: casted}, nil
 }
 
-func RequireBean[T types.Bean]() T {
+func RequireBean[T types2.Bean]() T {
 	err := ensureContext()
 	if err != nil {
 		panic(err)
@@ -88,34 +88,34 @@ func RequireBean[T types.Bean]() T {
 
 func ensureContext() error {
 	if globalCtx == nil {
-		return types.ErrNilContext
+		return types2.ErrNilContext
 	}
 	return nil
 }
 
-func GetBeanOrDefault[T types.Bean](defaultValue T) *types.ValueBox[T] {
+func GetBeanOrDefault[T types2.Bean](defaultValue T) *types2.ValueBox[T] {
 	c, err := GetBean[T]()
 	if err != nil {
-		return &types.ValueBox[T]{defaultValue}
+		return &types2.ValueBox[T]{defaultValue}
 	}
 	return c
 }
 
-func provideDefault[T types.Bean](provider *types.BeanProvider) {
+func provideDefault[T types2.Bean](provider *types2.BeanProvider) {
 	if globalCtx != nil {
 		err := globalCtx.Register(provider)
 		if err != nil {
 			panic(err)
 		}
 	} else {
-		deferredUpdates = append(deferredUpdates, func(ctx types.Context) error {
+		deferredUpdates = append(deferredUpdates, func(ctx types2.Context) error {
 			return ctx.Register(provider)
 		})
 	}
 	log.Printf("Provided default bean: %s", reflect.TypeFor[T]().String())
 }
 
-func GetValue[T interface{}](path string) (*types.ValueBox[T], error) {
+func GetValue[T interface{}](path string) (*types2.ValueBox[T], error) {
 	err := ensureContext()
 	if err != nil {
 		return nil, err
@@ -127,15 +127,15 @@ func GetValue[T interface{}](path string) (*types.ValueBox[T], error) {
 	casted, ok := val.(T)
 	if !ok {
 		typeName := reflect.TypeFor[T]().String()
-		return types.EmptyBox[T](), errors.Errorf("expected type %s but got %T", typeName, val)
+		return types2.EmptyBox[T](), errors.Errorf("expected type %s but got %T", typeName, val)
 	}
-	return &types.ValueBox[T]{Value: casted}, nil
+	return &types2.ValueBox[T]{Value: casted}, nil
 }
 
-func GetValueOrDefault[T interface{}](path string, defaultValue T) *types.ValueBox[T] {
+func GetValueOrDefault[T interface{}](path string, defaultValue T) *types2.ValueBox[T] {
 	val, err := GetValue[T](path)
 	if err != nil {
-		return &types.ValueBox[T]{Value: defaultValue}
+		return &types2.ValueBox[T]{Value: defaultValue}
 	}
 	return val
 }
@@ -144,7 +144,7 @@ func SetValue[T interface{}](path string, value T) int {
 	if globalCtx != nil {
 		globalCtx.SetGenericValue(path, value)
 	} else {
-		deferredUpdates = append(deferredUpdates, func(ctx types.Context) error {
+		deferredUpdates = append(deferredUpdates, func(ctx types2.Context) error {
 			ctx.SetGenericValue(path, value)
 			return nil
 		})
@@ -152,7 +152,7 @@ func SetValue[T interface{}](path string, value T) int {
 	return dummyInt
 }
 
-func NewLazyBean[T types.Bean]() types.LazyBean[T] {
+func NewLazyBean[T types2.Bean]() types2.LazyBean[T] {
 	return func() T {
 		bean, err := GetBean[T]()
 		if err != nil {
@@ -196,14 +196,14 @@ func CloseContextSoft() error {
 	return nil
 }
 
-func applyContext(ctx types.Context) {
+func applyContext(ctx types2.Context) {
 	if globalCtx != nil {
-		panic(types.ErrContextAlreadyExists)
+		panic(types2.ErrContextAlreadyExists)
 	}
 	globalCtx = ctx
 }
 
-func GetBeanFromContext(beanType reflect.Type) (types.Bean, error) {
+func GetBeanFromContext(beanType reflect.Type) (types2.Bean, error) {
 	val, err := GlobalCtx().Get(beanType)
 	if err != nil {
 		return nil, err
@@ -214,7 +214,7 @@ func GetBeanFromContext(beanType reflect.Type) (types.Bean, error) {
 func GetGenericValueOrDefault(path string, defaultValue interface{}) (interface{}, error) {
 	value, err := GlobalCtx().GetGenericValue(path)
 	if err != nil {
-		if errors.Is(err, types.ErrNoValueFound) && defaultValue != nil {
+		if errors.Is(err, types2.ErrNoValueFound) && defaultValue != nil {
 			return defaultValue, nil
 		}
 		return nil, err
@@ -226,14 +226,14 @@ func GetGenericValue(path string) (interface{}, error) {
 	return GetGenericValueOrDefault(path, nil)
 }
 
-func GetBeanOrDefaultFromContext(beanType reflect.Type, defaultValue types.Bean) (types.Bean, error) {
+func GetBeanOrDefaultFromContext(beanType reflect.Type, defaultValue types2.Bean) (types2.Bean, error) {
 	err := utils.ValidateTypeIsBean(beanType)
 	if err != nil {
 		return nil, err
 	}
 	bean, err := GetBeanFromContext(beanType)
 	if err != nil {
-		if types.ErrNoInjectableProvided(err) && defaultValue != nil {
+		if types2.ErrNoInjectableProvided(err) && defaultValue != nil {
 			return defaultValue, nil
 		}
 		return nil, err
