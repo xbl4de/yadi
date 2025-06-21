@@ -9,6 +9,7 @@ var ErrNonBeanType = errors.New("not a bean type")
 var ErrParseTag = errors.New("parse tag error")
 var ErrNilContext = errors.New("nil context")
 var ErrContextAlreadyExists = errors.New("context already exists")
+var ErrCycleDependencies = errors.New("detected cycle dependency")
 
 func ErrNoInjectableProvided(err error) bool {
 	return errors.Is(err, ErrNoBeanProvider) || errors.Is(err, ErrNoValueFound)

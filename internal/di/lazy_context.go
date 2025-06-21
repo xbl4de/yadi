@@ -1,23 +1,28 @@
 package di
 
 import (
+	"fmt"
 	"github.com/pkg/errors"
 	"github.com/xbl4de/yadi/internal/types"
 	"io"
 	"reflect"
+	"slices"
+	"strings"
 )
 
 type LazyContext struct {
-	beans     map[reflect.Type]*types.BeanContainer
-	providers map[reflect.Type]*types.BeanProvider
-	values    map[string]interface{}
+	beans       map[reflect.Type]*types.BeanContainer
+	providers   map[reflect.Type]*types.BeanProvider
+	values      map[string]interface{}
+	injectStack []reflect.Type
 }
 
 func NewLazyContext(updates []func(ctx types.Context) error) *LazyContext {
 	ctx := &LazyContext{
-		beans:     make(map[reflect.Type]*types.BeanContainer),
-		providers: make(map[reflect.Type]*types.BeanProvider),
-		values:    make(map[string]interface{}),
+		beans:       make(map[reflect.Type]*types.BeanContainer),
+		providers:   make(map[reflect.Type]*types.BeanProvider),
+		values:      make(map[string]interface{}),
+		injectStack: make([]reflect.Type, 0),
 	}
 	for _, update := range updates {
 		err := update(ctx)
@@ -60,8 +65,14 @@ func (ctx *LazyContext) Register(provider *types.BeanProvider) error {
 }
 
 func (ctx *LazyContext) Get(p reflect.Type) (types.Bean, error) {
+	var err error
+	err = ctx.pushInjectStack(p)
+	defer ctx.popInjectStack()
+	if err != nil {
+		return nil, err
+	}
 	if bean, ok := ctx.beans[p]; ok {
-		return bean, nil
+		return bean.Bean, nil
 	}
 	beanContainer, err := ctx.initBean(p)
 	if err != nil {
@@ -121,4 +132,30 @@ func (ctx *LazyContext) GetGenericValue(path string) (interface{}, error) {
 
 func (ctx *LazyContext) SetGenericValue(path string, value interface{}) {
 	ctx.values[path] = value
+}
+
+func (ctx *LazyContext) pushInjectStack(p reflect.Type) error {
+	if slices.Contains(ctx.injectStack, p) {
+		diStack := ctx.dumpDiStack(p)
+		return fmt.Errorf("%w: cannot inject to\n%s", types.ErrCycleDependencies, diStack)
+	}
+	ctx.injectStack = append(ctx.injectStack, p)
+	return nil
+}
+
+func (ctx *LazyContext) popInjectStack() {
+	if len(ctx.injectStack) == 0 {
+		return
+	}
+	ctx.injectStack = ctx.injectStack[:len(ctx.injectStack)-1]
+}
+
+func (ctx *LazyContext) dumpDiStack(toAppend reflect.Type) string {
+	builder := strings.Builder{}
+	builder.WriteString(ctx.injectStack[0].String() + "\n")
+	for _, t := range ctx.injectStack[1:] {
+		builder.WriteString("↳ " + t.String() + "\n")
+	}
+	builder.WriteString("→ " + toAppend.String() + "\n")
+	return builder.String()
 }
