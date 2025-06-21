@@ -37,6 +37,7 @@ func TestCycleDependencies_BeanA(t *testing.T) {
 	UseLazyContext()
 
 	_, err := GetBean[*A]()
+
 	g.Expect(err).Should(g.MatchError(types.ErrCycleDependencies))
 	fmt.Println(err)
 }
@@ -47,6 +48,7 @@ func TestCycleDependencies_BeanB(t *testing.T) {
 	UseLazyContext()
 
 	_, err := GetBean[*B]()
+
 	g.Expect(err).Should(g.MatchError(types.ErrCycleDependencies))
 }
 
@@ -56,6 +58,7 @@ func TestCycleDependencies_BeanC(t *testing.T) {
 	UseLazyContext()
 
 	_, err := GetBean[*C]()
+
 	g.Expect(err).Should(g.MatchError(types.ErrCycleDependencies))
 }
 
@@ -71,6 +74,7 @@ func TestCycleDependencies_BeanLazy(t *testing.T) {
 	})
 
 	c, err := GetBean[*LazyC]()
+
 	g.Expect(err).ShouldNot(g.HaveOccurred())
 	g.Expect(c).ShouldNot(g.BeNil())
 	g.Expect(c.Value.B().A).ShouldNot(g.BeNil())

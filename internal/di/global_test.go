@@ -1,13 +1,14 @@
 package di
 
 import (
+	g "github.com/onsi/gomega"
 	"github.com/pkg/errors"
-	"github.com/stretchr/testify/require"
 	"github.com/xbl4de/yadi/internal/types"
 	"testing"
 )
 
 func TestSetBeanProvider_ProviderSet(t *testing.T) {
+	g.RegisterTestingT(t)
 	ResetYadi()
 	ProvideDefaultValues()
 
@@ -19,12 +20,14 @@ func TestSetBeanProvider_ProviderSet(t *testing.T) {
 	UseLazyContext()
 
 	bean, err := GetBean[*ServiceE]()
-	require.NoError(t, err)
-	require.NotNil(t, bean)
-	require.Equal(t, "service E", bean.Value.Description)
+
+	g.Expect(err).ShouldNot(g.HaveOccurred())
+	g.Expect(bean).ShouldNot(g.BeNil())
+	g.Expect(bean.Value.Description).Should(g.Equal("service E"))
 }
 
 func TestSetBeanProvider_ProviderSet_WithHoldByUser(t *testing.T) {
+	g.RegisterTestingT(t)
 	ResetYadi()
 	ProvideDefaultValues()
 
@@ -34,15 +37,19 @@ func TestSetBeanProvider_ProviderSet_WithHoldByUser(t *testing.T) {
 	UseLazyContext()
 
 	bean, err := GetBean[*ServiceClose]()
-	require.NoError(t, err)
-	require.NotNil(t, bean)
-	require.False(t, bean.Value.Closed)
+
+	g.Expect(err).ShouldNot(g.HaveOccurred())
+	g.Expect(bean).ShouldNot(g.BeNil())
+	g.Expect(bean.Value.Closed).Should(g.BeFalse())
+
 	err = CloseContext()
-	require.NoError(t, err)
-	require.False(t, bean.Value.Closed)
+
+	g.Expect(err).ShouldNot(g.HaveOccurred())
+	g.Expect(bean.Value.Closed).Should(g.BeFalse())
 }
 
 func TestSetBeanProvider_ProviderSet_WithHoldNotByUser(t *testing.T) {
+	g.RegisterTestingT(t)
 	ResetYadi()
 	ProvideDefaultValues()
 
@@ -52,34 +59,42 @@ func TestSetBeanProvider_ProviderSet_WithHoldNotByUser(t *testing.T) {
 	UseLazyContext()
 
 	bean, err := GetBean[*ServiceClose]()
-	require.NoError(t, err)
-	require.NotNil(t, bean)
-	require.False(t, bean.Value.Closed)
+
+	g.Expect(err).ShouldNot(g.HaveOccurred())
+	g.Expect(bean).ShouldNot(g.BeNil())
+	g.Expect(bean.Value.Closed).Should(g.BeFalse())
+
 	err = CloseContext()
-	require.NoError(t, err)
-	require.True(t, bean.Value.Closed)
+
+	g.Expect(err).ShouldNot(g.HaveOccurred())
+	g.Expect(bean.Value.Closed).Should(g.BeTrue())
 }
 
 func TestSetBeanProvider_AutoBuild_ValuesProvided(t *testing.T) {
+	g.RegisterTestingT(t)
 	ResetYadi()
 	ProvideDefaultValues()
 	UseLazyContext()
 
 	bean, err := GetBean[*ServiceE]()
-	require.NoError(t, err)
-	require.NotNil(t, bean)
-	require.Equal(t, ServiceEDescription, bean.Value.Description)
+
+	g.Expect(err).ShouldNot(g.HaveOccurred())
+	g.Expect(bean).ShouldNot(g.BeNil())
+	g.Expect(bean.Value.Description).Should(g.Equal(ServiceEDescription))
 }
 
 func TestSetBeanProvider_AutoBuild_ValuesNotProvided(t *testing.T) {
+	g.RegisterTestingT(t)
 	ResetYadi()
 	UseLazyContext()
 
 	_, err := GetBean[*ServiceE]()
-	require.ErrorIs(t, err, types.ErrNoValueFound)
+
+	g.Expect(err).Should(g.MatchError(types.ErrNoValueFound))
 }
 
 func TestGetBean_WithNilContext(t *testing.T) {
+	g.RegisterTestingT(t)
 	ResetYadi()
 	ProvideDefaultValues()
 
@@ -87,10 +102,12 @@ func TestGetBean_WithNilContext(t *testing.T) {
 		return NewServiceE(ServiceEDescription), nil
 	})
 	_, err := GetBean[*ServiceE]()
-	require.ErrorIs(t, err, types.ErrNilContext)
+
+	g.Expect(err).Should(g.MatchError(types.ErrNilContext))
 }
 
 func TestRequireBean_Success(t *testing.T) {
+	g.RegisterTestingT(t)
 	ResetYadi()
 	ProvideDefaultValues()
 	UseLazyContext()
@@ -99,47 +116,42 @@ func TestRequireBean_Success(t *testing.T) {
 		return NewServiceE(ServiceEDescription), nil
 	})
 	serviceE := RequireBean[*ServiceE]()
-	require.NotNil(t, serviceE)
-	require.Equal(t, ServiceEDescription, serviceE.Description)
+
+	g.Expect(serviceE).ShouldNot(g.BeNil())
+	g.Expect(serviceE.Description).Should(g.Equal(ServiceEDescription))
 }
 
 func TestRequireBean_CannotBuild(t *testing.T) {
+	g.RegisterTestingT(t)
 	ResetYadi()
 	ProvideDefaultValues()
 	UseLazyContext()
 
-	defer func() {
-		if r := recover(); r == nil {
-			t.Errorf("The code did not panic")
-		} else {
-			require.Error(t, r.(error))
-		}
-	}()
-
 	SetBeanProvider[*ServiceE](func(ctx types.Context) (*ServiceE, error) {
 		return nil, errors.New("fail")
 	})
-	_ = RequireBean[*ServiceE]()
+
+	g.Expect(func() {
+		RequireBean[*ServiceE]()
+	}).Should(g.Panic())
 }
 
 func TestRequireBean_NilContext(t *testing.T) {
+	g.RegisterTestingT(t)
 	ResetYadi()
 	ProvideDefaultValues()
 
-	defer func() {
-		if r := recover(); r == nil {
-			t.Errorf("The code did not panic")
-		} else {
-			require.ErrorIs(t, r.(error), types.ErrNilContext)
-		}
-	}()
 	SetBeanProvider[*ServiceE](func(ctx types.Context) (*ServiceE, error) {
 		return NewServiceE("abc"), nil
 	})
-	_ = RequireBean[*ServiceE]()
+
+	g.Expect(func() {
+		RequireBean[*ServiceE]()
+	}).Should(g.PanicWith(g.MatchError(types.ErrNilContext)))
 }
 
 func TestGetBeanOrDefault_ShouldReturnDefault(t *testing.T) {
+	g.RegisterTestingT(t)
 	ResetYadi()
 	ProvideDefaultValues()
 	UseLazyContext()
@@ -151,11 +163,13 @@ func TestGetBeanOrDefault_ShouldReturnDefault(t *testing.T) {
 	bean := GetBeanOrDefault[*ServiceE](&ServiceE{
 		Description: "abcd",
 	})
-	require.NotNil(t, bean)
-	require.Equal(t, "abcd", bean.Value.Description)
+
+	g.Expect(bean).ShouldNot(g.BeNil())
+	g.Expect(bean.Value.Description).Should(g.Equal("abcd"))
 }
 
 func TestGetBeanOrDefault_ShouldReturnRegisteredBean(t *testing.T) {
+	g.RegisterTestingT(t)
 	ResetYadi()
 	ProvideDefaultValues()
 	UseLazyContext()
@@ -167,116 +181,131 @@ func TestGetBeanOrDefault_ShouldReturnRegisteredBean(t *testing.T) {
 	bean := GetBeanOrDefault[*ServiceE](&ServiceE{
 		Description: "abcd",
 	})
-	require.NotNil(t, bean)
-	require.Equal(t, "registered", bean.Value.Description)
+
+	g.Expect(bean).ShouldNot(g.BeNil())
+	g.Expect(bean.Value.Description).Should(g.Equal("registered"))
 }
 
 func TestGetBeanOrDefault_NilContext(t *testing.T) {
+	g.RegisterTestingT(t)
 	ResetYadi()
 
 	bean := GetBeanOrDefault[*ServiceE](&ServiceE{
 		Description: "abcd",
 	})
-	require.NotNil(t, bean)
-	require.Equal(t, "abcd", bean.Value.Description)
+
+	g.Expect(bean).ShouldNot(g.BeNil())
+	g.Expect(bean.Value.Description).Should(g.Equal("abcd"))
 }
 
 func TestGetValue_FromPresetDefaults(t *testing.T) {
+	g.RegisterTestingT(t)
 	ResetYadi()
 	ProvideDefaultValues()
 	UseLazyContext()
 
 	d, err := GetValue[string]("serviceE.description")
-	require.NoError(t, err)
-	require.Equal(t, ServiceEDescription, d.Value)
+
+	g.Expect(err).ShouldNot(g.HaveOccurred())
+	g.Expect(d.Value)
 }
 
 func TestGetValue_FromProvided(t *testing.T) {
+	g.RegisterTestingT(t)
 	ResetYadi()
 	UseLazyContext()
 
 	SetValue[string]("serviceE.description", "value")
 
 	d, err := GetValue[string]("serviceE.description")
-	require.NoError(t, err)
-	require.Equal(t, "value", d.Value)
+
+	g.Expect(err).ShouldNot(g.HaveOccurred())
+	g.Expect(d.Value).Should(g.Equal("value"))
 }
 
 func TestGetValue_GetByWrongType(t *testing.T) {
+	g.RegisterTestingT(t)
 	ResetYadi()
 	UseLazyContext()
 
 	SetValue[int]("serviceE.description", 10)
 
 	_, err := GetValue[string]("serviceE.description")
-	require.Error(t, err)
+
+	g.Expect(err).Should(g.HaveOccurred())
 }
 
 func TestGetValue_NilContext(t *testing.T) {
+	g.RegisterTestingT(t)
 	ResetYadi()
 
 	SetValue[string]("serviceE.description", "abc")
 
 	_, err := GetValue[string]("serviceE.description")
-	require.ErrorIs(t, err, types.ErrNilContext)
+
+	g.Expect(err).Should(g.MatchError(types.ErrNilContext))
 }
 
 func TestGetValueOrDefault_ShouldReturnDefault(t *testing.T) {
+	g.RegisterTestingT(t)
 	ResetYadi()
 	UseLazyContext()
 
 	val := GetValueOrDefault[string]("path", "fallback")
-	require.NotNil(t, val)
-	require.Equal(t, "fallback", val.Value)
+
+	g.Expect(val).ShouldNot(g.BeNil())
+	g.Expect(val.Value).Should(g.Equal("fallback"))
 }
 
 func TestGetValueOrDefault_ShouldReturnRegistered(t *testing.T) {
+	g.RegisterTestingT(t)
 	ResetYadi()
 	UseLazyContext()
 
 	SetValue[string]("path", "registered")
 
 	val := GetValueOrDefault[string]("path", "fallback")
-	require.NotNil(t, val)
-	require.Equal(t, "registered", val.Value)
+
+	g.Expect(val).ShouldNot(g.BeNil())
+	g.Expect(val.Value).Should(g.Equal("registered"))
 }
 
 func TestGetValueOrDefault_WrongType_ShouldReturnDefault(t *testing.T) {
+	g.RegisterTestingT(t)
 	ResetYadi()
 	UseLazyContext()
 
 	SetValue[string]("path", "registered")
 
 	val := GetValueOrDefault[int]("path", 10)
-	require.NotNil(t, val)
-	require.Equal(t, 10, val.Value)
+
+	g.Expect(val).ShouldNot(g.BeNil())
+	g.Expect(val.Value).Should(g.Equal(10))
 }
 
 func TestGetValueOrDefault_NilContext(t *testing.T) {
+	g.RegisterTestingT(t)
 	ResetYadi()
 	SetValue[int]("path", 10)
 
 	val := GetValueOrDefault[int]("path", 12)
-	require.NotNil(t, val)
-	require.Equal(t, 12, val.Value)
+
+	g.Expect(val).ShouldNot(g.BeNil())
+	g.Expect(val.Value).Should(g.Equal(12))
 }
 
 func TestUseLazyContext_UseTwice_ShouldPanic(t *testing.T) {
+	g.RegisterTestingT(t)
 	ResetYadi()
 
-	defer func() {
-		if r := recover(); r == nil {
-			t.Errorf("The code did not panic")
-		} else {
-			require.ErrorIs(t, r.(error), types.ErrContextAlreadyExists)
-		}
-	}()
-
-	UseLazyContext()
-	UseLazyContext()
+	g.Expect(func() {
+		UseLazyContext()
+		UseLazyContext()
+	}).Should(g.Panic())
 }
 
 func TestGetBean_InterfaceType_FromPointerProvider(t *testing.T) {
+	g.RegisterTestingT(t)
 	ResetYadi()
 	ProvideDefaultValues()
 	UseLazyContext()
@@ -285,12 +314,14 @@ func TestGetBean_InterfaceType_FromPointerProvider(t *testing.T) {
 		WithDefaultValueAt(0, 22))
 
 	bean, err := GetBean[CountInterface]()
-	require.NoError(t, err)
-	require.NotNil(t, bean)
-	require.Equal(t, 22, bean.Value.GetCount())
+
+	g.Expect(err).ShouldNot(g.HaveOccurred())
+	g.Expect(bean).ShouldNot(g.BeNil())
+	g.Expect(bean.Value.GetCount()).Should(g.Equal(22))
 }
 
 func TestGetBean_InterfaceType_FromInterfaceProvider(t *testing.T) {
+	g.RegisterTestingT(t)
 	ResetYadi()
 	ProvideDefaultValues()
 	UseLazyContext()
@@ -302,7 +333,8 @@ func TestGetBean_InterfaceType_FromInterfaceProvider(t *testing.T) {
 	})
 
 	bean, err := GetBean[CountInterface]()
-	require.NoError(t, err)
-	require.NotNil(t, bean)
-	require.Equal(t, 11, bean.Value.GetCount())
+
+	g.Expect(err).ShouldNot(g.HaveOccurred())
+	g.Expect(bean).ShouldNot(g.BeNil())
+	g.Expect(bean.Value.GetCount()).Should(g.Equal(11))
 }
