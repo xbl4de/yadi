@@ -1,4 +1,4 @@
-package di
+package yadi
 
 type ServiceIgnore struct {
 	ServiceA *ServiceA `yadi:"ignore"`

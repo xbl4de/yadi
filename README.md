@@ -62,7 +62,7 @@ func UseServiceE() {
 	if err != nil {
 		// process error
 	} else {
-		fmt.Println(serviceE.Value.Description)
+		fmt.Println(serviceE.Description)
 	}
 }
 ```
@@ -140,7 +140,7 @@ func SomeFunc() {
 	if err != nil {
 		// process error
 	} else {
-		println(someInt.Value)
+		println(someInt)
     }
 }
 ```
@@ -265,6 +265,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/xbl4de/yadi/types"
 	"github.com/xbl4de/yadi"
 )
 
@@ -278,7 +279,7 @@ func main() {
 }
 
 func SomeFunc() {
-	var e yadi.LazyBean[*ServiceE]
+	var e types.LazyBean[*ServiceE]
 	e = yadi.InjectLazyBean[*ServiceE]()
 
 	fmt.Println(e().Description)

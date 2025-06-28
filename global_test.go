@@ -1,4 +1,4 @@
-package di
+package yadi
 
 import (
 	g "github.com/onsi/gomega"
@@ -23,7 +23,7 @@ func TestSetBeanProvider_ProviderSet(t *testing.T) {
 
 	g.Expect(err).ShouldNot(g.HaveOccurred())
 	g.Expect(bean).ShouldNot(g.BeNil())
-	g.Expect(bean.Value.Description).Should(g.Equal("service E"))
+	g.Expect(bean.Description).Should(g.Equal("service E"))
 }
 
 func TestSetBeanProvider_ProviderSet_WithHoldByUser(t *testing.T) {
@@ -40,12 +40,12 @@ func TestSetBeanProvider_ProviderSet_WithHoldByUser(t *testing.T) {
 
 	g.Expect(err).ShouldNot(g.HaveOccurred())
 	g.Expect(bean).ShouldNot(g.BeNil())
-	g.Expect(bean.Value.Closed).Should(g.BeFalse())
+	g.Expect(bean.Closed).Should(g.BeFalse())
 
 	err = CloseContext()
 
 	g.Expect(err).ShouldNot(g.HaveOccurred())
-	g.Expect(bean.Value.Closed).Should(g.BeFalse())
+	g.Expect(bean.Closed).Should(g.BeFalse())
 }
 
 func TestSetBeanProvider_ProviderSet_WithHoldNotByUser(t *testing.T) {
@@ -62,12 +62,12 @@ func TestSetBeanProvider_ProviderSet_WithHoldNotByUser(t *testing.T) {
 
 	g.Expect(err).ShouldNot(g.HaveOccurred())
 	g.Expect(bean).ShouldNot(g.BeNil())
-	g.Expect(bean.Value.Closed).Should(g.BeFalse())
+	g.Expect(bean.Closed).Should(g.BeFalse())
 
 	err = CloseContext()
 
 	g.Expect(err).ShouldNot(g.HaveOccurred())
-	g.Expect(bean.Value.Closed).Should(g.BeTrue())
+	g.Expect(bean.Closed).Should(g.BeTrue())
 }
 
 func TestSetBeanProvider_AutoBuild_ValuesProvided(t *testing.T) {
@@ -80,7 +80,7 @@ func TestSetBeanProvider_AutoBuild_ValuesProvided(t *testing.T) {
 
 	g.Expect(err).ShouldNot(g.HaveOccurred())
 	g.Expect(bean).ShouldNot(g.BeNil())
-	g.Expect(bean.Value.Description).Should(g.Equal(ServiceEDescription))
+	g.Expect(bean.Description).Should(g.Equal(ServiceEDescription))
 }
 
 func TestSetBeanProvider_AutoBuild_ValuesNotProvided(t *testing.T) {
@@ -165,7 +165,7 @@ func TestGetBeanOrDefault_ShouldReturnDefault(t *testing.T) {
 	})
 
 	g.Expect(bean).ShouldNot(g.BeNil())
-	g.Expect(bean.Value.Description).Should(g.Equal("abcd"))
+	g.Expect(bean.Description).Should(g.Equal("abcd"))
 }
 
 func TestGetBeanOrDefault_ShouldReturnRegisteredBean(t *testing.T) {
@@ -183,7 +183,7 @@ func TestGetBeanOrDefault_ShouldReturnRegisteredBean(t *testing.T) {
 	})
 
 	g.Expect(bean).ShouldNot(g.BeNil())
-	g.Expect(bean.Value.Description).Should(g.Equal("registered"))
+	g.Expect(bean.Description).Should(g.Equal("registered"))
 }
 
 func TestGetBeanOrDefault_NilContext(t *testing.T) {
@@ -195,7 +195,7 @@ func TestGetBeanOrDefault_NilContext(t *testing.T) {
 	})
 
 	g.Expect(bean).ShouldNot(g.BeNil())
-	g.Expect(bean.Value.Description).Should(g.Equal("abcd"))
+	g.Expect(bean.Description).Should(g.Equal("abcd"))
 }
 
 func TestGetValue_FromPresetDefaults(t *testing.T) {
@@ -207,7 +207,7 @@ func TestGetValue_FromPresetDefaults(t *testing.T) {
 	d, err := GetValue[string]("serviceE.description")
 
 	g.Expect(err).ShouldNot(g.HaveOccurred())
-	g.Expect(d.Value)
+	g.Expect(d)
 }
 
 func TestGetValue_FromProvided(t *testing.T) {
@@ -220,7 +220,7 @@ func TestGetValue_FromProvided(t *testing.T) {
 	d, err := GetValue[string]("serviceE.description")
 
 	g.Expect(err).ShouldNot(g.HaveOccurred())
-	g.Expect(d.Value).Should(g.Equal("value"))
+	g.Expect(d).Should(g.Equal("value"))
 }
 
 func TestGetValue_GetByWrongType(t *testing.T) {
@@ -253,8 +253,7 @@ func TestGetValueOrDefault_ShouldReturnDefault(t *testing.T) {
 
 	val := GetValueOrDefault[string]("path", "fallback")
 
-	g.Expect(val).ShouldNot(g.BeNil())
-	g.Expect(val.Value).Should(g.Equal("fallback"))
+	g.Expect(val).Should(g.Equal("fallback"))
 }
 
 func TestGetValueOrDefault_ShouldReturnRegistered(t *testing.T) {
@@ -266,8 +265,7 @@ func TestGetValueOrDefault_ShouldReturnRegistered(t *testing.T) {
 
 	val := GetValueOrDefault[string]("path", "fallback")
 
-	g.Expect(val).ShouldNot(g.BeNil())
-	g.Expect(val.Value).Should(g.Equal("registered"))
+	g.Expect(val).Should(g.Equal("registered"))
 }
 
 func TestGetValueOrDefault_WrongType_ShouldReturnDefault(t *testing.T) {
@@ -279,8 +277,7 @@ func TestGetValueOrDefault_WrongType_ShouldReturnDefault(t *testing.T) {
 
 	val := GetValueOrDefault[int]("path", 10)
 
-	g.Expect(val).ShouldNot(g.BeNil())
-	g.Expect(val.Value).Should(g.Equal(10))
+	g.Expect(val).Should(g.Equal(10))
 }
 
 func TestGetValueOrDefault_NilContext(t *testing.T) {
@@ -290,8 +287,7 @@ func TestGetValueOrDefault_NilContext(t *testing.T) {
 
 	val := GetValueOrDefault[int]("path", 12)
 
-	g.Expect(val).ShouldNot(g.BeNil())
-	g.Expect(val.Value).Should(g.Equal(12))
+	g.Expect(val).Should(g.Equal(12))
 }
 
 func TestUseLazyContext_UseTwice_ShouldPanic(t *testing.T) {
@@ -317,7 +313,7 @@ func TestGetBean_InterfaceType_FromPointerProvider(t *testing.T) {
 
 	g.Expect(err).ShouldNot(g.HaveOccurred())
 	g.Expect(bean).ShouldNot(g.BeNil())
-	g.Expect(bean.Value.GetCount()).Should(g.Equal(22))
+	g.Expect(bean.GetCount()).Should(g.Equal(22))
 }
 
 func TestGetBean_InterfaceType_FromInterfaceProvider(t *testing.T) {
@@ -335,6 +331,5 @@ func TestGetBean_InterfaceType_FromInterfaceProvider(t *testing.T) {
 	bean, err := GetBean[CountInterface]()
 
 	g.Expect(err).ShouldNot(g.HaveOccurred())
-	g.Expect(bean).ShouldNot(g.BeNil())
-	g.Expect(bean.Value.GetCount()).Should(g.Equal(11))
+	g.Expect(bean.GetCount()).Should(g.Equal(11))
 }

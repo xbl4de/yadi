@@ -1,18 +1,12 @@
-package di
+package yadi
 
 import (
 	"github.com/pkg/errors"
-	"github.com/xbl4de/yadi/internal/log"
-	"github.com/xbl4de/yadi/internal/utils"
+	"github.com/xbl4de/yadi/log"
 	"github.com/xbl4de/yadi/types"
+	"github.com/xbl4de/yadi/utils"
 	"reflect"
 )
-
-func InjectLazyBean[T types.Bean]() types.LazyBean[T] {
-	return func() T {
-		return RequireBean[T]()
-	}
-}
 
 func tryToBuildNewBean(beanType reflect.Type) (interface{}, error) {
 	log.Verbose("Trying to build new bean for type %s", beanType.String())
@@ -40,10 +34,6 @@ func tryToBuildNewBean(beanType reflect.Type) (interface{}, error) {
 	} else {
 		return valPtr.Elem().Interface(), nil
 	}
-}
-
-func Inject(valuePtr types.Bean) error {
-	return injectToPtr(reflect.ValueOf(valuePtr))
 }
 
 func injectToPtr(reflectValue reflect.Value) error {
@@ -94,14 +84,14 @@ func shouldIgnoreInjection(yadiTag *types.Tag, fieldType reflect.Type) bool {
 
 func getValueToInject(fieldType reflect.Type, yadiTag *types.Tag) (interface{}, error) {
 	if utils.IsTypeBean(fieldType) {
-		bean, err := GetBeanFromContext(fieldType)
+		bean, err := getBeanFromContext(fieldType)
 		if err != nil {
 			return nil, err
 		}
 		return bean, nil
 	} else {
 		path := yadiTag.ValuePath
-		genericValue, err := GetGenericValue(path)
+		genericValue, err := getGenericValue(path)
 		if err != nil {
 			return nil, err
 		}

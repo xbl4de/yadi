@@ -1,4 +1,4 @@
-package di
+package yadi
 
 import (
 	"fmt"
@@ -77,6 +77,6 @@ func TestCycleDependencies_BeanLazy(t *testing.T) {
 
 	g.Expect(err).ShouldNot(g.HaveOccurred())
 	g.Expect(c).ShouldNot(g.BeNil())
-	g.Expect(c.Value.B().A).ShouldNot(g.BeNil())
-	g.Expect(c.Value.B().A.C).ShouldNot(g.BeNil())
+	g.Expect(c.B().A).ShouldNot(g.BeNil())
+	g.Expect(c.B().A.C).ShouldNot(g.BeNil())
 }

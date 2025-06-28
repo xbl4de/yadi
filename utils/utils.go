@@ -44,10 +44,6 @@ func CastToErr(errVal reflect.Value) error {
 	return errVal.Elem().Interface().(error)
 }
 
-func BuildValueBox[T interface{}](reflectVal reflect.Value) *types.ValueBox[T] {
-	return &types.ValueBox[T]{Value: ConvertToBean(reflectVal).(T)}
-}
-
 func IsTypesNotCompatible(declaredType reflect.Type, returnType reflect.Type) bool {
 	if declaredType != returnType {
 		if declaredType.Kind() == reflect.Interface && returnType.Kind() == reflect.Ptr {
