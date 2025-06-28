@@ -1,9 +1,9 @@
-package di
+package yadi
 
 import (
 	"github.com/pkg/errors"
-	"github.com/xbl4de/yadi/internal/utils"
 	"github.com/xbl4de/yadi/types"
+	"github.com/xbl4de/yadi/utils"
 	"reflect"
 )
 
@@ -13,8 +13,11 @@ type ParameterConfig struct {
 }
 
 type FuncProviderConfig struct {
+	beanName   string
 	parameters map[int]*ParameterConfig
 }
+
+type FuncProviderOption func(*FuncProviderConfig)
 
 func (c *FuncProviderConfig) Parameter(index int) *ParameterConfig {
 	if index < 0 {
@@ -35,52 +38,44 @@ func NewFuncProviderConfig() *FuncProviderConfig {
 	}
 }
 
-type FuncProviderOption func(*FuncProviderConfig)
-
-func WithValuePathAt(paramIndex int, path string) FuncProviderOption {
-	return func(config *FuncProviderConfig) {
-		config.Parameter(paramIndex).ValuePath = path
-	}
-}
-
-func WithDefaultValueAt(paramIndex int, defaultValue interface{}) FuncProviderOption {
-	return func(config *FuncProviderConfig) {
-		config.Parameter(paramIndex).DefaultValue = defaultValue
-	}
-}
-
-func SetBeanProviderFunc[T types.Bean](function interface{}, opts ...FuncProviderOption) int {
-	return SetBeanProvider(func(ctx types.Context) (T, error) {
-		cfg := NewFuncProviderConfig()
+func extractBeanName(opts []FuncProviderOption) string {
+	beanName := ""
+	if len(opts) > 0 {
+		fakeCfg := NewFuncProviderConfig()
 		for _, opt := range opts {
-			opt(cfg)
+			opt(fakeCfg)
 		}
-		box, err := providerFromFuncE[T](function, cfg)
-		return box.Value, err
-	})
+		beanName = fakeCfg.beanName
+	}
+	return beanName
 }
 
-func providerFromFuncE[T types.Bean](function interface{}, cfg *FuncProviderConfig) (*types.ValueBox[T], error) {
+func providerFromFuncE[T types.Bean](function interface{}, cfg *FuncProviderConfig) (T, error) {
 	funcValue := reflect.ValueOf(function)
 	funcType := reflect.TypeOf(function)
-
+	var zeroValue T
 	err := validateProviderFunc[T](funcValue, funcType)
 	if err != nil {
-		return types.EmptyBox[T](), err
+		return zeroValue, err
 	}
 
 	args, err := buildArgs(funcType, cfg)
 	if err != nil {
-		return types.EmptyBox[T](), err
+		return zeroValue, err
 	}
 
 	outs := funcValue.Call(args)
-	box := utils.BuildValueBox[T](outs[0])
+	bean := utils.ConvertToBean(outs[0])
+
+	casted, ok := bean.(T)
+	if !ok {
+		return zeroValue, errors.Errorf("invalid bean type: %T", bean)
+	}
 
 	if len(outs) == 1 {
-		return box, nil
+		return casted, nil
 	} else {
-		return box, utils.CastToErr(outs[1])
+		return casted, utils.CastToErr(outs[1])
 	}
 }
 
@@ -122,7 +117,7 @@ func findArgValue(argType reflect.Type, opt *ParameterConfig) (interface{}, erro
 	if argType.Kind() == reflect.Ptr ||
 		argType.Kind() == reflect.Interface ||
 		argType.Kind() == reflect.Struct {
-		return GetBeanOrDefaultFromContext(argType, opt.DefaultValue)
+		return getBeanOrDefaultFromContext(argType, opt.DefaultValue)
 	}
-	return GetGenericValueOrDefault(opt.ValuePath, opt.DefaultValue)
+	return getGenericValueOrDefault(opt.ValuePath, opt.DefaultValue)
 }

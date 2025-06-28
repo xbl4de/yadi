@@ -1,4 +1,4 @@
-package di
+package yadi
 
 import (
 	g "github.com/onsi/gomega"
@@ -71,7 +71,7 @@ func TestSetBeanProviderFunc_WithOption_DefaultValueProvided(t *testing.T) {
 
 	g.Expect(err).ShouldNot(g.HaveOccurred())
 	g.Expect(serviceE).ShouldNot(g.BeNil())
-	g.Expect(serviceE.Value.Description).Should(g.Equal("test"))
+	g.Expect(serviceE.Description).Should(g.Equal("test"))
 }
 
 func TestSetBeanProviderFunc_WithOption_DefaultValueNotProvided(t *testing.T) {
@@ -97,7 +97,7 @@ func TestSetBeanProviderFunc_WithOption_ValuePathProvided(t *testing.T) {
 
 	g.Expect(err).ShouldNot(g.HaveOccurred())
 	g.Expect(serviceE).ShouldNot(g.BeNil())
-	g.Expect(serviceE.Value.Description).Should(g.Equal("test-description"))
+	g.Expect(serviceE.Description).Should(g.Equal("test-description"))
 }
 
 func TestSetBeanProviderFunc_WithOption_ValuePathNotProvided(t *testing.T) {
@@ -137,9 +137,9 @@ func TestSetBeanProviderFunc_WithBeanAsParameter_Success(t *testing.T) {
 
 	g.Expect(err).ShouldNot(g.HaveOccurred())
 	g.Expect(serviceB).ShouldNot(g.BeNil())
-	g.Expect(serviceB.Value.ServiceF).ShouldNot(g.BeNil())
-	g.Expect(serviceB.Value.ServiceH).ShouldNot(g.BeNil())
-	g.Expect(serviceB.Value.Age).Should(g.Equal(14))
+	g.Expect(serviceB.ServiceF).ShouldNot(g.BeNil())
+	g.Expect(serviceB.ServiceH).ShouldNot(g.BeNil())
+	g.Expect(serviceB.Age).Should(g.Equal(14))
 }
 
 func TestSetBeanProviderFunc_WithBeanAsParameter_Failure(t *testing.T) {
