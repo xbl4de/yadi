@@ -4,6 +4,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/xbl4de/yadi/types"
 	"reflect"
+	"strings"
 )
 
 func ValidateTypeIsBean(beanType reflect.Type) error {
@@ -54,4 +55,11 @@ func IsTypesNotCompatible(declaredType reflect.Type, returnType reflect.Type) bo
 	} else {
 		return false
 	}
+}
+
+func Capitalize(s string) string {
+	if len(s) == 0 {
+		return s
+	}
+	return strings.ToUpper(string(s[0])) + s[1:]
 }

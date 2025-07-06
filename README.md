@@ -253,8 +253,30 @@ func SomeFunc() {
 		// process the error
     }
 }
-
 ```
+
+## Inject to unexported fields
+
+Go reflection has limitation: it cannot access to unexported fields directly. To inject such fields, you need to define Setter method with pointer receiver:
+
+```go
+type ExampleServiceC struct {
+	unexportedField string `yadi:"path=serviceC.unexportedField"`
+}
+
+func (c *ExampleServiceC) SetUnexportedField(unexportedField string) {
+	c.unexportedField = unexportedField
+}
+
+func TestInjectViaSetterExample(t *testing.T) {
+	yadi.UseLazyContext()
+	yadi.SetValue("serviceC.unexportedField", "unexportedField")
+
+	bean, err := yadi.GetBean[*ExampleServiceC]()
+}
+```
+
+Setter should be exported method, and name convention is `Set` + `field-name `, where field name is camelcase starting from a capital letter.
 
 ## Lazy beans
 
