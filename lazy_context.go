@@ -65,13 +65,6 @@ func (ctx *LazyContext) Close() error {
 	return nil
 }
 
-func (ctx *LazyContext) addProviders(providers []*types.BeanProvider) {
-	for _, provider := range providers {
-		key := keyFromProvider(provider)
-		ctx.providers[key] = provider
-	}
-}
-
 func keyFromProvider(provider *types.BeanProvider) BeanKey {
 	return NewBeanKey(provider.BeanType, provider.BeanName)
 }
@@ -93,6 +86,7 @@ func (ctx *LazyContext) get(key BeanKey, buildIfNotFound bool) (types.Bean, erro
 	var err error
 	err = ctx.pushInjectStack(key)
 	defer ctx.popInjectStack()
+
 	if err != nil {
 		return nil, err
 	}
@@ -125,11 +119,11 @@ func (ctx *LazyContext) popInjectStack() {
 func (ctx *LazyContext) dumpDiStack(toAppend BeanKey) string {
 	builder := strings.Builder{}
 	firstEl := ctx.injectStack[0]
-	builder.WriteString(fmt.Sprintf("%s[%s]", firstEl.Name, firstEl.Type.String()))
+	builder.WriteString(fmt.Sprintf("%s[%s]\n", firstEl.Name, firstEl.Type.String()))
 	for _, el := range ctx.injectStack[1:] {
-		builder.WriteString(fmt.Sprintf("↳  %s[%s]", el.Name, el.Type.String()))
+		builder.WriteString(fmt.Sprintf("↳  %s[%s]\n", el.Name, el.Type.String()))
 	}
-	builder.WriteString(fmt.Sprintf("→ %s[%s]", toAppend.Name, toAppend.Type.String()))
+	builder.WriteString(fmt.Sprintf("→ %s[%s]\n", toAppend.Name, toAppend.Type.String()))
 	return builder.String()
 }
 
@@ -141,12 +135,7 @@ func (ctx *LazyContext) initBean(key BeanKey, shouldTryBuildNewBean bool) (*type
 		if !shouldTryBuildNewBean {
 			return nil, types.ErrNoBeanProvider
 		}
-		val, err := tryToBuildNewBean(key.Type)
-		if err != nil {
-			return nil, err
-		}
-		beanContainer = types.NewBeanContainerHoldByContext(val, key.Name, key.Type)
-		return beanContainer, nil
+		return ctx.buildTheBean(key)
 	}
 
 	if provider.UseExistingBean != nil {
@@ -163,6 +152,15 @@ func (ctx *LazyContext) initBean(key BeanKey, shouldTryBuildNewBean bool) (*type
 		beanContainer = types.NewBeanContainer(bean, key.Name, key.Type, provider.HoldByContext)
 	}
 	ctx.beans[key] = beanContainer
+	return beanContainer, nil
+}
+
+func (ctx *LazyContext) buildTheBean(key BeanKey) (*types.BeanContainer, error) {
+	val, err := tryToBuildNewBean(key.Type)
+	if err != nil {
+		return nil, err
+	}
+	beanContainer := types.NewBeanContainerHoldByContext(val, key.Name, key.Type)
 	return beanContainer, nil
 }
 

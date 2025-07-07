@@ -20,6 +20,7 @@ type ExampleServiceB struct {
 
 func TestAutoBeanProvideExample(t *testing.T) {
 	g.RegisterTestingT(t)
+	_ = yadi.CloseContext()
 
 	yadi.UseLazyContext()
 	yadi.SetValue("serviceA.timeout", 10)
@@ -35,8 +36,9 @@ func TestAutoBeanProvideExample(t *testing.T) {
 
 func TestBeanProviderExample(t *testing.T) {
 	g.RegisterTestingT(t)
-	yadi.UseLazyContext()
+	_ = yadi.CloseContext()
 
+	yadi.UseLazyContext()
 	yadi.SetBeanProvider[*ExampleServiceB](func(ctx types.Context) (*ExampleServiceB, error) {
 		return &ExampleServiceB{
 			ServiceA: &ExampleServiceA{
@@ -56,9 +58,9 @@ func TestBeanProviderExample(t *testing.T) {
 
 func TestFuncBeanProviderExample(t *testing.T) {
 	g.RegisterTestingT(t)
+	_ = yadi.CloseContext()
 
 	yadi.UseLazyContext()
-
 	provider := func() *ExampleServiceB {
 		return &ExampleServiceB{
 			ServiceA: &ExampleServiceA{
@@ -75,4 +77,24 @@ func TestFuncBeanProviderExample(t *testing.T) {
 	g.Expect(err).ShouldNot(g.HaveOccurred())
 	fmt.Printf("Service B: %+v\n", b)
 	fmt.Printf("Service A: %+v\n", b.ServiceA)
+}
+
+type ExampleServiceC struct {
+	unexportedField string `yadi:"path=serviceC.unexportedField"`
+}
+
+func (c *ExampleServiceC) SetUnexportedField(unexportedField string) {
+	c.unexportedField = unexportedField
+}
+
+func TestInjectViaSetterExample(t *testing.T) {
+	g.RegisterTestingT(t)
+	_ = yadi.CloseContext()
+
+	yadi.UseLazyContext()
+	yadi.SetValue("serviceC.unexportedField", "unexportedField")
+
+	bean, err := yadi.GetBean[*ExampleServiceC]()
+	g.Expect(err).ShouldNot(g.HaveOccurred())
+	fmt.Printf("Service C: %+v\n", bean)
 }
